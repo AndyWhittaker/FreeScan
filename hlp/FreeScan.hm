@@ -1,0 +1,26 @@
+  
+// Commands (ID_* and IDM_*)  
+  
+// Prompts (IDP_*)  
+HIDP_OLE_INIT_FAILED                    0x30064
+  
+// Resources (IDR_*)  
+HIDR_MAINFRAME                          0x20080
+  
+// Dialogs (IDD_*)  
+HIDD_ABOUT                              0x20081
+HIDD_DETAIL                             0x20082
+HIDD_STATUS                             0x20083
+HIDD_RAWHEX_0                           0x20085
+HIDD_ENGINEDATA                         0x20086
+HIDD_TCODES                             0x20088
+HIDD_RAWHEX_1                           0x20089
+HIDD_SENSORS                            0x2008C
+HIDD_ADVANCED                           0x2008D
+HIDD_DASHBOARD                          0x2008E
+HIDD_DESIDLE                            0x20090
+HIDD_DIALOG1                            0x20092
+HIDD_ENGINEVIEW                         0x20096
+HIDD_STATUSBITS                         0x20099
+  
+// Frame Controls (IDW_*)  

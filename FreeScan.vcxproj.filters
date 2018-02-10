@@ -1,0 +1,474 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{671aa3b0-7400-4c13-adab-18b34d71a4d3}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Source Files\ActiveX">
+      <UniqueIdentifier>{6a637027-6392-42a5-8cde-bca195180e58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SetDesiredIdle">
+      <UniqueIdentifier>{8c38cf49-520d-4249-8043-6f46cfe76fb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ToolTips">
+      <UniqueIdentifier>{6f984c4e-dfbb-4de1-b3dc-b595f8687211}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SerialPort">
+      <UniqueIdentifier>{d9a4f340-6fd9-495c-801f-b09c148ab248}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Status Dlg">
+      <UniqueIdentifier>{f87fa021-7dc3-43fb-97b8-5e46c84a43ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols">
+      <UniqueIdentifier>{381332de-515c-4ce9-93d1-0793ae78fdcb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\Lotus Esprit">
+      <UniqueIdentifier>{f3704d64-03c6-419b-b41c-ec55f3b899cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\Lotus Elan M100">
+      <UniqueIdentifier>{ad40f5f7-c26a-49a5-9dab-9427379d1867}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29">
+      <UniqueIdentifier>{3821662c-4714-4a8d-bd5f-d5fc5904fab1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM 1992 Pontiac %28A186%29">
+      <UniqueIdentifier>{97ae630c-08a1-414c-a8dc-127863acd3a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM 1989 Corvette">
+      <UniqueIdentifier>{803f6cdf-d37d-4d6f-ba3e-11c15a9e0e94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29">
+      <UniqueIdentifier>{1fd3114c-6d8d-41f4-8245-d9772cb8b3ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A27">
+      <UniqueIdentifier>{1ebff63f-5fa6-4062-85bf-dfd4e1e100c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A34">
+      <UniqueIdentifier>{93d22dee-3d3b-4355-8d71-644bf9bd27bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A143">
+      <UniqueIdentifier>{60b9acbc-a11c-4eb6-8808-5ff4827ff02a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A55">
+      <UniqueIdentifier>{f0bf81af-e0de-484c-9159-f44471f58f9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A140">
+      <UniqueIdentifier>{74fb347f-33bd-4f27-a701-fbe40b4c27b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\Lotus Carlton">
+      <UniqueIdentifier>{7cdd8949-0faf-4286-8a09-3aeea1d39a7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\A160">
+      <UniqueIdentifier>{03a0d74a-d56d-42d4-a1a8-e03278d99feb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AboutBox">
+      <UniqueIdentifier>{bfdc5203-ce9d-4fd3-bb8f-86fb6a97d5bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Led">
+      <UniqueIdentifier>{7ba10e64-11ad-4977-8f4e-a922d354bed9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\StringEx">
+      <UniqueIdentifier>{32da4727-49a4-4b98-894c-bd2d200f0ce8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{f3b320c7-da56-4bf9-8d35-fda7b8b6e23b}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{8de493fa-5e0b-4100-af25-0a27968da197}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="Help Files">
+      <UniqueIdentifier>{6d7d1112-eb99-4e89-a9b0-0f6246f44475}</UniqueIdentifier>
+      <Extensions>cnt;rtf</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Protocols\ELM327">
+      <UniqueIdentifier>{760be2c4-1eab-47f5-8a2e-7c7a7ca9523d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="font.cpp">
+      <Filter>Source Files\ActiveX</Filter>
+    </ClCompile>
+    <ClCompile Include="picture.cpp">
+      <Filter>Source Files\ActiveX</Filter>
+    </ClCompile>
+    <ClCompile Include="rbgauge.cpp">
+      <Filter>Source Files\ActiveX</Filter>
+    </ClCompile>
+    <ClCompile Include="DesIdleDlg.cpp">
+      <Filter>Source Files\SetDesiredIdle</Filter>
+    </ClCompile>
+    <ClCompile Include="OXToolTipCtrl.cpp">
+      <Filter>Source Files\ToolTips</Filter>
+    </ClCompile>
+    <ClCompile Include="TTPropertyPage.cpp">
+      <Filter>Source Files\ToolTips</Filter>
+    </ClCompile>
+    <ClCompile Include="EnumSer.cpp">
+      <Filter>Source Files\SerialPort</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialPort.cpp">
+      <Filter>Source Files\SerialPort</Filter>
+    </ClCompile>
+    <ClCompile Include="StatusDlg.cpp">
+      <Filter>Source Files\Status Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\EspritParser.cpp">
+      <Filter>Source Files\Protocols\Lotus Esprit</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\EspritProtocol.cpp">
+      <Filter>Source Files\Protocols\Lotus Esprit</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\ElanParser.cpp">
+      <Filter>Source Files\Protocols\Lotus Elan M100</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\ElanProtocol.cpp">
+      <Filter>Source Files\Protocols\Lotus Elan M100</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GM1994CamaroZ28Parser.cpp">
+      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GM1994CamaroZ28Protocol.cpp">
+      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GM1992PontiacParser.cpp">
+      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GM1992PontiacProtocol.cpp">
+      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GM1989CorvetteParser.cpp">
+      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GM1989CorvetteProtocol.cpp">
+      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GM1993CamaroZ28Parser.cpp">
+      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GM1993CamaroZ28Protocol.cpp">
+      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GMA143Parser.cpp">
+      <Filter>Source Files\Protocols\GM A143</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GMA143Protocol.cpp">
+      <Filter>Source Files\Protocols\GM A143</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GMA140Parser.cpp">
+      <Filter>Source Files\Protocols\GM A140</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GMA140Protocol.cpp">
+      <Filter>Source Files\Protocols\GM A140</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\LotusCarltonParser.cpp">
+      <Filter>Source Files\Protocols\Lotus Carlton</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\LotusCarltonProtocol.cpp">
+      <Filter>Source Files\Protocols\Lotus Carlton</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GMA160Parser.cpp">
+      <Filter>Source Files\Protocols\A160</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GMA160Protocol.cpp">
+      <Filter>Source Files\Protocols\A160</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\GMBaseFunctions.cpp">
+      <Filter>Source Files\Protocols</Filter>
+    </ClCompile>
+    <ClCompile Include="Supervisor.cpp">
+      <Filter>Source Files\Protocols</Filter>
+    </ClCompile>
+    <ClCompile Include="About.cpp">
+      <Filter>Source Files\AboutBox</Filter>
+    </ClCompile>
+    <ClCompile Include="HyperLink.cpp">
+      <Filter>Source Files\AboutBox</Filter>
+    </ClCompile>
+    <ClCompile Include="Led.cpp">
+      <Filter>Source Files\Led</Filter>
+    </ClCompile>
+    <ClCompile Include="MABString.cpp">
+      <Filter>Source Files\StringEx</Filter>
+    </ClCompile>
+    <ClCompile Include="AdvancedDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DashBoardDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineViewDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FreeScan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RawMode00.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RawMode01.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SensorDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StatusBitsDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TCodesDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\ELM327Parser.cpp">
+      <Filter>Source Files\Protocols\ELM327</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\ELM327Protocol.cpp">
+      <Filter>Source Files\Protocols\ELM327</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="font.h">
+      <Filter>Source Files\ActiveX</Filter>
+    </ClInclude>
+    <ClInclude Include="picture.h">
+      <Filter>Source Files\ActiveX</Filter>
+    </ClInclude>
+    <ClInclude Include="rbgauge.h">
+      <Filter>Source Files\ActiveX</Filter>
+    </ClInclude>
+    <ClInclude Include="DesIdleDlg.h">
+      <Filter>Source Files\SetDesiredIdle</Filter>
+    </ClInclude>
+    <ClInclude Include="OXToolTipCtrl.h">
+      <Filter>Source Files\ToolTips</Filter>
+    </ClInclude>
+    <ClInclude Include="TTPropertyPage.h">
+      <Filter>Source Files\ToolTips</Filter>
+    </ClInclude>
+    <ClInclude Include="EnumSer.h">
+      <Filter>Source Files\SerialPort</Filter>
+    </ClInclude>
+    <ClInclude Include="SerialPort.h">
+      <Filter>Source Files\SerialPort</Filter>
+    </ClInclude>
+    <ClInclude Include="StatusDlg.h">
+      <Filter>Source Files\Status Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\EspritParser.h">
+      <Filter>Source Files\Protocols\Lotus Esprit</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\EspritProtocol.h">
+      <Filter>Source Files\Protocols\Lotus Esprit</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\ElanParser.h">
+      <Filter>Source Files\Protocols\Lotus Elan M100</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\ElanProtocol.h">
+      <Filter>Source Files\Protocols\Lotus Elan M100</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GM1994CamaroZ28Parser.h">
+      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GM1994CamaroZ28Protocol.h">
+      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GM1992PontiacParser.h">
+      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GM1992PontiacProtocol.h">
+      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GM1989CorvetteParser.h">
+      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GM1989CorvetteProtocol.h">
+      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GM1993CamaroZ28Parser.h">
+      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GM1993CamaroZ28Protocol.h">
+      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GMA143Parser.h">
+      <Filter>Source Files\Protocols\GM A143</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GMA143Protocol.h">
+      <Filter>Source Files\Protocols\GM A143</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GMA140Parser.h">
+      <Filter>Source Files\Protocols\GM A140</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GMA140Protocol.h">
+      <Filter>Source Files\Protocols\GM A140</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\LotusCarltonParser.h">
+      <Filter>Source Files\Protocols\Lotus Carlton</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\LotusCarltonProtocol.h">
+      <Filter>Source Files\Protocols\Lotus Carlton</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GMA160Parser.h">
+      <Filter>Source Files\Protocols\A160</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GMA160Protocol.h">
+      <Filter>Source Files\Protocols\A160</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\GMBaseFunctions.h">
+      <Filter>Source Files\Protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="Supervisor.h">
+      <Filter>Source Files\Protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="About.h">
+      <Filter>Source Files\AboutBox</Filter>
+    </ClInclude>
+    <ClInclude Include="HyperLink.h">
+      <Filter>Source Files\AboutBox</Filter>
+    </ClInclude>
+    <ClInclude Include="Led.h">
+      <Filter>Source Files\Led</Filter>
+    </ClInclude>
+    <ClInclude Include="MABString.h">
+      <Filter>Source Files\StringEx</Filter>
+    </ClInclude>
+    <ClInclude Include="AdvancedDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DashBoardDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DetailDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineViewDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FreeScan.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RawMode00.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RawMode01.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SensorDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StatusBitsDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TCodesDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\ELM327Protocol.h">
+      <Filter>Source Files\Protocols\ELM327</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\ELM327Parser.h">
+      <Filter>Source Files\Protocols\ELM327</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FreeScan.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Protocols\Lotus Esprit ALDL.doc">
+      <Filter>Source Files\Protocols\Lotus Esprit</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\Lotus Elan.txt">
+      <Filter>Source Files\Protocols\Lotus Elan M100</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\GM Camaro Z28.doc">
+      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\GM Pontiac 3_4.doc">
+      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\GM Chevrolet 89 Corvette.doc">
+      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\GM Camaro 92-93Y 93F.txt">
+      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\A27.txt">
+      <Filter>Source Files\Protocols\GM A27</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\A34.txt">
+      <Filter>Source Files\Protocols\GM A34</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\A143.txt">
+      <Filter>Source Files\Protocols\GM A143</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\A55.txt">
+      <Filter>Source Files\Protocols\GM A55</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\A140.txt">
+      <Filter>Source Files\Protocols\GM A140</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\A160.txt">
+      <Filter>Source Files\Protocols\A160</Filter>
+    </CustomBuild>
+    <CustomBuild Include="hlp\FreeScan.hpj">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="res\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="res\bmp00001.bmp">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="res\bmp00002.bmp">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="res\FreeScan.ico">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="res\FreeScan.rc2">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="res\leds.bmp">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="res\logo.bmp">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="hlp\AfxDlg.rtf">
+      <Filter>Help Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="hlp\FreeScan.cnt">
+      <Filter>Help Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="hlp\FreeScan.hm">
+      <Filter>Help Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ReadMe.txt" />
+  </ItemGroup>
+</Project>

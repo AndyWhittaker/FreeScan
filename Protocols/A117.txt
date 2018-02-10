@@ -1,0 +1,379 @@
+
+                        DATA STREAM A117  SPECIFICATION
+
+       SPECIFICATIONS FOR  DATA STREAM INFORMATION
+       -------------------------------------------
+
+       ENGINE   USAGE:
+              2.0L TBI (LT2)   (VIN=K)   89   T CAR
+              2.0L TBI (LT2)   (VIN=K)   90   T CAR
+              2.0L TBI (LT2)   (VIN=K)   91   T CAR
+
+       DATA PIN  : READ DATA ON PIN "M" OF ALDL CONNECTOR
+
+       BAUD RATE : 8192 BAUD BI - DIRECTIONAL
+
+..PAGE
+
+MODE 0  (RETURN TO NORMAL MODE)
+        ALDL REQUEST:
+        - MESSAGE ID            = $F0
+        - MESSAGE LENGTH        =  85 + 1 = 86 = $56
+        - MODE NUMBER           = $00
+        - CHECKSUM
+
+        ECM RESPONSE:
+        The ECM will respond by sending the Normal mode message.
+
+MODE 1  (TRANSMIT FIXED DATA STREAM)
+        ALDL REQUEST:
+        - MESSAGE ID            = $F0
+        - MESSAGE LENGTH        =  85 + 1 = 86 = $56
+        - MODE NUMBER           = $01
+        - CHECKSUM
+
+        ECM RESPONSE:
+        - MESSAGE ID            = $F0
+        - MESSAGE LENGTH        =  85 + 64 = 149 = $95
+        - MODE NUMBER           = $01
+        - DATA BYTE 1
+            .
+            .
+            .
+        - DATA BYTE 63
+        - CHECKSUM
+
+..PAGE
+MODE 7   (COMMAND NORMAL MODE MESSAGE)
+         ALDL REQUEST:
+         - MESSAGE ID           = $F0
+         - MESSAGE LENGTH       =  85 + 2 = 87 = $57
+         - MODE NUMBER          = $07
+         - ECM SCHEDULER MESSAGE CODE (0-F)
+         - CHECKSUM
+
+         ECM RESPONSE:
+         The ECM will respond with the appropriate normal mode scheduler
+         message if one exists for that particular scheduler message code.
+
+..PAGE
+..HEAD02L ALDL DATA LIST
+..HEAD03L NUMBER OF DATA WORDS - 63
+..HEAD04L ALDL MODE 1 *F95* DATA LIST
+WORD #   DATA NAME     DESCRIPTION
+
+  1      PROMIDA       FIRST PROM I.D. WORD (MSB)
+  2      PROMIDA+1     SECOND PROM I.D. WORD (LSB)
+  3      MALFFLG1      MALF FLAG WORD 1
+         0             MALF CODE 24  VEHICLE SPEED SENSOR
+         1             MALF CODE 23  MAT SENSOR LOW TEMPERATURE
+         2             MALF CODE 22  THROTTLE POSITION SENSOR LOW
+         3             MALF CODE 21  THROTTLE POSITION SENSOR HIGH
+         4             MALF CODE 15  COOLANT SENSOR LOW TEMPERATURE
+         5             MALF CODE 14  COOLANT SENSOR HIGH TEMPERATURE
+         6             MALF CODE 13  OXYGEN SENSOR FAILURE
+         7             MALF CODE 12  NO REF PULSES (ENGINE NOT RUNNING)
+  4      MALFLG2       MALF FLAG WORD 2
+         0             MALF CODE 42  EST MONITOR ERROR
+         1             MALF CODE 41  NOT USED
+         2             MALF CODE 35  IAC ERROR
+         3             MALF CODE 34  MAP SENSOR LOW
+         4             MALF CODE 33  MAP SENSOR HIGH
+         5             MALF CODE 32  EGR FAILURE
+         6             MALF CODE 31  NOT USED
+         7             MALF CODE 25  MAT SENSOR HIGH TEMPERATURE
+ 5       MALFFLG3      MALF FLAG WORD 3
+         0             MALF CODE 55  NOT USED
+         1             MALF CODE 54  NOT USED
+         2             MALF CODE 53  HIGH BATERY VOLTAGE
+         3             MALF CODE 52  NOT USED
+         4             MALF CODE 51  PROM ERROR
+         5             MALF CODE 45  OXYGEN SENSOR RICH
+         6             MALF CODE 44  OXYGEN SENSOR LEAN
+         7             MALF CODE 43  NOT USED
+ 6       COOLDEGA      A/D COUNTS FOR COOLANT TEMP
+                        DEG C = N*.75 - 40
+ 7       COOLTSU       A/D COUNTS STARTUP COOLANT TEMP
+                        DEG C = N*.75 - 40
+ 8       ADTHROT       A/D COUNTS FOR THROTTLE POSITION
+                        VOLTS = N*(5/255)
+ 9       NTPSLD        THROTTLE POSITION LOAD AXIS VARIABLE
+                        % TPS = N/2.56
+..PAGE
+10       NTRPMX        RPM VARIABLE SCALED 25 RPM/BIT
+                        RPM = N*25
+11       OLDRFPER      LAST MINOR LOOP PERIOD FROM ECU (MSB)
+                        N = uSEC/(15.26*256)
+12       OLDRFPER+1    LAST MINOR LOOP PERIOD FROM ECU (LSB)
+                        uSEC = ([N11]*256 + [N12])*15.26
+13       FILTMPH       FILTERED MILES PER HOUR (MSB)
+                        MPH = N
+14       FILTMPH+1     NOT USED
+15       ADO2A         A/D COUNTS FOR O2 SENSOR
+                        MILLVOLTS = N*(1000/226)
+16       ALDLCNTR      # OF RICH/LEAN TRANSITIONS
+                        N = TRANSITION COUNTS
+17       CORRCL        BASE PULSE CLOSED LOOP CORRECTION
+18       BLM           BLOCK LEARN MULTIPLIER
+                        N = CURRENT BLOCK LEARN MULTIPLIER
+19       BLMCELL       BLOCK LEARN CELL (0 or 1 ONLY)
+                        N = CURRENT BLOCK LEARN MULIPLIER
+20       INT           CLOSED LOOP INTEGRATOR
+                        N = INTEGRATOR COUNTS
+21       ISSPMP        IAC RESET MOTOR POSITION
+                        N = IAC STEPS
+22       ISDSMP        DESIRED IAC POSITION
+                        N = IAC STEPS
+23       DESSPD        DESIRED ENGINE SPEED
+                        RPM = N*12.5
+24       ISDWNA        DESIRED IDLE RPM
+                        RPM = N*12.5
+25       ADBARO        A/D COUNTS FOR BARO SENSOR
+                        VOLTS = N*(5/255)
+26       ADMAP         A/D COUNTS FOR MAP SENSOR
+                        VOLTS = N*(5/255)
+27       NMAPLD        1 ATMOSPHERE MAP LOAD
+                        VOLTS = N*(5/255)
+28       ADVAC         A/D COUNTS FOR VACUUM
+                        VOLTS = N*(5/255)
+29       MATDEG        MAT TEMP SCALED SAME AS COOLDEGA
+                        DEG C = N*.75 - 40
+30       RAWADMAT      RAW A/D MAT COUNTS
+                    *** SEE MAT LOOK UP TABLE ***
+** note: mat sensor not available on car !!!!
+31       ADBAT         BATTERY VOLTAGE A/D COUNTS
+                        VOLTS = N/10
+32       SAC           SPARK ADVANCE IN DEGREES
+                        DEGREES = N*90/256
+33       SAP           SPARK ADVANCE RELATIVE TO TDC (MSB)
+34       SAP+1         SPARK ADVANCE RELATIVE TO TDC (LSB)
+              double byte value in 2's complement representation
+              If Bit 7 of MSB = 0  then result is positive
+                 value = ([N33]*256 + [N34])
+              If Bit 7 of MSB = 1  then result is negative
+                 value = 65536 - ([N33]*256 + [N34])
+                        DEGREES = VALUE * 90/256
+35       BPW           VALUE OF BPW AT END OF BPW CALC (MSB)
+36       BPW+1         VALUE OF BPW AT END OF BPW CALC (LSB)
+                       mSEC = ([N35]*256 + [N36])/65.536
+37       AIRFUEL       AIR FUEL RATIO
+                        A/F RATIO = N/10
+38       AFCR          AIR FUEL RATIO CRANKING
+                        A/F RATIO = N/10
+39       TIME          ENGINE RUN TIME IN SECONDS
+40       TIME+1        ENGINE RUN TIME IN SECONDS
+                        SEC = ([N39]*256 + [N40])
+41       DFUEL         BORD COMPUTER OUTPUT VALUE (MSB)
+42       DFUEL+1       BORD COMPUTER OUTPUT VALUE (LSB)
+43       INSTFUEL      BORD COMPUTER FUEL ACCUMULATION
+44       LCKDLY        TCC LOCK DELAY TIMER (.1 SECONDS)
+45       APPW          TOTAL ASYNCHRONOUS PULSE WIDTH (MSB)
+46       APPW+1        TOTAL ASYNCHRONOUS PULSE WIDTH (LSB)
+                        mSEC = ([N45]*256 + [N46])/65.536
+47       TREF          NO. OF MINOR LOOPS BETWEEN SUCCESSIVE REFERENCE PULSES
+                        SEC = N/80
+48       ISALPA        POWER STEERING STALL IAC PULSES
+                        N = IAC MOTOR STEPS
+49       MW2           MINOR LOOP MODE WORD 2
+         0    DEFCO ASYNC DISPLAY FLAG                     1 = DEFCO
+         1    ROAD SPEED FILTER EXERCISE FLAG
+         2    REF PULSE OCCURRED                            6.25 mSEC CHECK
+         3    DIAG SW. IN FACTORY TEST POSITION
+         4    DIAG SW. IN DIAGNOSTIC POSITION
+         5    DIAG SW. IN ALDL POSITION
+         6    HIGH BATTERY VOLTAGE                         1 = HIGH BATT VOLTS
+         7    OLD CELL FLAG (AIR/FUEL)
+..PAGE
+50       MW1          MINOR LOOP MODE WORD 1
+         0    ADVANCE FLAG                                 0 = ADV; 1 = RTD
+         1    VEHICLE MOVING FLAG                          0 = AT REST
+         2    INTERRUPT SERVICE EXECUTION EXCEEDED          6.25 mSEC
+         3    1st PASS FUELUP FLAG FOR A/F BLEND LOGIC     1 = NOT
+         4    ROAD SPEED FIRST PASS FLAG
+         5    A/C CLUTCH FLAG                              1 = DISABLED
+         6    1 = MALF 42 BYPASS CHECK ENABLED
+         7    ENGINE RUNNING FLAG                          1 = RUNNING
+51       ALCLMW       ALCL MODE WORD
+         0    1 = ALDL-MODE 4
+         1    1 = ALDL-MODE 4 INIT.
+         2    FIELD SERVICE MODE
+         3    FIRST C/L PASS THRU FIELD SERVICE MODE DONE  1 = DONE
+         4    FIELD SERVICE, O2 TRANSITION
+         5    NOT USED
+         6    200 mSEC TOGGLE BIT FOR 2.5 Hz FSM FLASH RATE
+         7    1 = ALDL MODE (8192)
+52       CLCCMW        MAJOR LOOP MODE WORD 1
+         0    F4 TBL FLAG, ALSO USED FOR CLPROP            0 = EGR ON
+         1    LEAN CRUISE FLAG                             1 = IN LEAN CRUISE
+         2    1st PASS FROM DECLUTCH FLAG FOR DEFCO LOGIC
+         3    DECEL FUEL CUTOFF FLAG                       1 = DEFCO ENABLED
+         4    ALDL MOTOR RESET COMPLETE FLAG
+         5    MOTOR RESET HAS STARTED
+         6    N. V. MEMORY BOMBED
+         7    CLOSED TPS FLAG                              1 = CLOSED
+53       MWAF         AIR-RATIO MODE WORD
+         0    "NOT IN GEAR"                                1 = NOT IN GEAR
+         1    AEDT FLAG (AE DELTA THROTTLE FLAG)
+         2    BL ADDRESS CHANGE FLAG (50 mSEC LOOP)        1 = CHANGE
+         3    BL ADDRESS CHANGE FLAG (25 mSEC LOOP)        1 = CHANGE
+         4    DE FLAG                                      1 = DE IS ACTIVE
+         5    PE FLAG                                      1 = PE IS ACTIVE
+         6    AE FLAG                                      1 = AE IS ACTIVE
+         7    DELIVER ASYNCH. PULSE FLAG (DAP FLAG)
+54       MWAF1         AIR-FUEL MODE WORD
+         0    CLEAR FLOOD FLAG                             1 = CRANKED IN C/F
+         1    LEARN CONTROL ENABLE FLAG                    1 = ENABLE STORE
+         2    LOW BATTERY IAC INHIBIT FLAG                 1 = IAC INHIBITED
+         3    HYSTERESIS FLAG FOR LOW RPM INT RESET
+         4    ASYNCHRONOUS PULSE FLAG (AP FLAG)
+         5    FIRST TIME C/L FLAG                          1 = FIRST TIME
+         6    RICH/LEAN FLAG                               1 = RICH; 0 = LEAN
+         7    CLOSED LOOP FLAG                             1 = CLOSED LOOP
+..PAGE
+55       FMDBYTE1     FMD BYTE 1  MODE WORD
+         0    PARK/NEUTRAL                                 1 = DRIVE
+         1    (READ BUT NOT USED)
+         2    POWER STEERING                               0 = CRAMP
+**   note: power steering pressure switch not available on car !!!
+         3    (READ BUT NOT USED)
+         4    V5 COOLING FAN DISCRETE                      1 = FAN REQUESTED
+** note: this byte does not work as expected, and should not be displayed.
+         5    (READ BUT NOT USED)
+         6    (READ BUT NOT USED)
+         7    AIR CONDITIONER                              1 = A/C REQUESTED
+56       FMDBYTE2      FMD BYTE 2  MODE WORD
+         0    (READ BUT NOT USED)
+         1    (READ BUT NOT USED)
+         2    INPUT READ BUT NOT USED
+         3    M0 -- MODE DECODE:   REFA, REFB, FROM TREF
+         4    M1 -- MODE DECODE:   REFA, REFB, FROM TREF
+         5    0.4 VOLTS AT SENSOR REGISTER OF HARNESS
+         6    INJECTOR OR HARNESS SHORTED TO BATTERY
+         7    INTERRUPT DUE TO FMD ON RISING TREFB
+57       LCCPMW       LCC & CCP MODE WORD
+         BIT
+         0    FAN ON
+** note: this byte should not be used for fan request.
+         1    CHECK ENGINE DELAY FLAG
+         2    POWER STEERING MODE FLAG                     1 = ACTIVE
+         3    MALF 42A REPEAT FLAG
+         4    TCC MPH HYST BIT
+         5    CRANK FLAG                                   1 = CRANKING
+         6    IAC MOTOR MANEUVER  1 SEC. FLAG
+         7    TRANSMISSION LOCKED FLAG                     1 = LOCK ENABLED
+              .. OR SHIFT LIGHT STATUS                     1 = ON
+58       IACMW1       IDLE AIR CONTROL MODE WORD 1
+         0    MALF 35 ENABLE FLAG
+         1    SAG MODE FLAG                                1 = ACTIVE
+         2    PARK/NEUTRAL                                 1 = IN P/N
+         3    STALL SAVER CRACK MODE (OLD P/S CRACK)       1 = ACTIVE
+         4    DO MAJOR LOOP
+         5    A/C ON
+         6    THROTTLE CRACK MODE                          1 = ENABLED
+         7    STALL SAVER MODE (OLD P/S STALL)             1 = ACTIVE
+..PAGE
+59       IACMW2       IDLE AIR CONTROL MODE WORD 2
+         0    MOTOR DIRECTION                              1 = EXTENDED (CCW)
+                                                           0 = RETRACTED (CW)
+         1    IAC MOTOR MOVING FLAG                        1 = MOVING
+         2    AIR STATUS FLAG                              1 = INCREASING
+         3    1 = MOTOR RESET ACTIVE
+         4    HALF MINOR LOOP FLAG FOR 3.125 mSEC IAC LOGIC (1 = HML)
+         5    STEPPER MOTOR ON/OFF STATUS                  1 = ON; 0 = OFF
+         6    COIL A STATE                                 1 = ON; 0 = OFF
+         7    COIL B STATE                                 1 = ON; 0 = OFF
+60       NVMW          NON-VOLATILE MODE WORD
+         0    O2 SENSOR READY FLAG                         1 = READY
+         1    CLOSED LOOP TIMER O.K. FLAG                  1 = TIMER O.K.
+         2    MOTOR RESET COMPLETE
+         3    IMPROPER SHUTDOWN FLAG                       1 = IMPROPER
+         4    EXTENDED THROTTLE CRACKER A/C OFF ENABLE FLAG
+         5    IAC KICKDOWN ENABLE FLAG                     1 = ENABLED
+         6    EXTENDED THROTTLE CRACKER A/C OFF ENABLE FLAG
+         7    MALF 42 FLAG (EST MONITOR)
+61       MW4          MINOR LOOP MODE WORD 4
+         0    1 = 8192 BAUD SERIAL TRANSMIT ERROR OCCURRED
+         1    ALDL MODE 4 IAC MOTOR RESET COMPLETE FLAG
+         2    1st TIME HOT FLAG FOR FAN LOGIC
+         3    1st TIME A/C FLAG FOR A/C ANTICIPATE LOGIC
+         4    PARK/DRIVE 1st TIME FLAG FOR PARK/DRIVE A.E. LOGIC
+         5    EGR TEMPERATURE ENABLE FLAG                  1 = ENABLED
+         6    1 = NOT FIRST TIME BACKOUT SPARK MODE ENABLED
+         7    1 = EGR BACKOUT SPARK MODE ENABLED
+62       MW3          MINOR LOOP MODE WORD 3
+         0    LOOP TIMING FLAG FOR TIMING ERROR LOGIC
+         1    1 = SYNCH MAP READ WITH 2X REF PULSES ENABLED
+         2    1 = IGNITION OFF IAC RESET COMPLETE
+         3    0 = IAC P/S FIRST PASS
+         4    1 = REF PULSES OCCURRED FOR RPM FILTER
+         5    1 = A/C DISENGAGED AT HIGH RPM
+         6    1 = 320 Hz IAC STEP RATE IN USE;             0 = 160 Hz
+         7    1 = IGNITION OFF IAC RESET STARTED
+63       FMDSDI       FMD SERIAL INPUT DATA BIT DEFINITION
+         0    COOLANT SWITCH                               1 = ON;  0 = OFF
+         1    COP2 BIT TO COP2 BIT TIMER (SEE FMDSDI BIT 1)
+         2    ENABLE EST
+         3    PORT, PIN8
+              IF ENFPPMW = 1:
+              OPRT PIN8 = DESCRETE = PORTP8
+              FP PIN = PWMI .AND. (FUEL PUMP TIMER)
+              IF ENFPPWM = 0:
+              OPRT PIN8 = PWMI
+              FP PIN = FUEL PUMP TIMER
+         4    ENABLE FUEL PUMP PWM
+         5    DISCRETE OUTPUT TO ODSC
+         6    ENABLE IRQ* INTERUPT ON TREFB
+         7    0 = => BYTE 1, 1 = => BYTE 2
+
+
+..PAGE
+;************************************************************************
+;                        MAT LOOK UP TABLE
+;
+;                   TEMP                   RAWADMAT
+;                   'DEG C'                    N
+;                    -40                     255
+;                    -30                     251
+;                    -25                     250
+;                    -20                     247
+;                    -15                     245
+;                    -10                     241
+;                     -5                     237
+;                      0                     231
+;                      5                     225
+;                     10                     218
+;                     15                     209
+;                     20                     199
+;                     25                     189
+;                     30                     177
+;                     35                     165
+;                     40                     152
+;                     45                     139
+;                     50                     126
+;                     55                     114
+;                     60                     102
+;                     65                      92
+;                     70                      81
+;                     75                      72
+;                     80                      64
+;                     85                      56
+;                     90                      50
+;                     95                      44
+;                    100                      39
+;                    105                      34
+;                    110                      30
+;                    115                      26
+;                    120                      23
+;                    125                      21
+;                    130                      18
+;                    135                      16
+;                    140                      14
+;                    145                      13
+;                    150                      12
+;                    200                       0
+LAYOUT 000
+:ê  B 
+  
+Su¶   <_        ˙ \---+----+----+----+---------+---------+---------+---------+--@-/----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+     STANDARD 2      B
+ <

@@ -1,0 +1,22 @@
+From Ian Levy
+
+Byte 1 = PROM ID MSB
+Byte 2 = PROM ID LSB
+Byte 3 = MALF codes (?)
+Byte 4 = MALF codes (?)
+Byte 5 = MALF codes (?)
+Byte 6 = Temperature
+Byte 7 = Startup Temperature related?
+Byte 9 = TPS Voltage
+Byte 10 = TPS % (calculated load variable)
+Byte 11 = RPM / 25
+Byte 17 = Vehicle speed
+Byte 21 = IAC position (?)
+Byte 22 = Target Idle 1 bit = 12.5 RPM
+Byte 26 = Battery Volts
+Byte 28 = Manifold vacuum (?)
+Byte 31 = Time MSB
+Byte 32 = Time LSB
+Byte 33 = AFR target
+Byte 64 = checksum
+

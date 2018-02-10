@@ -1,0 +1,336 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+    <Keyword>MFCProj</Keyword>
+    <ProjectGuid>{D1DDC93D-3507-E8EE-01A1-AF3073C7D24A}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Static</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Static</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\Debug\</OutDir>
+    <IntDir>.\Debug\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\Release\</OutDir>
+    <IntDir>.\Release\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <MinimalRebuild>true</MinimalRebuild>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\Debug\FreeScan.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ObjectFileName>.\Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\Debug\FreeScan.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0809</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\Debug\FreeScan.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>.\Debug\FreeScan.exe</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\Release\FreeScan.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ObjectFileName>.\Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\Release\</ProgramDataBaseFileName>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\Release\FreeScan.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0809</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\Release\FreeScan.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>.\Release\FreeScan.exe</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="font.cpp" />
+    <ClCompile Include="picture.cpp" />
+    <ClCompile Include="Protocols\ELM327Parser.cpp" />
+    <ClCompile Include="Protocols\ELM327Protocol.cpp" />
+    <ClCompile Include="rbgauge.cpp" />
+    <ClCompile Include="DesIdleDlg.cpp" />
+    <ClCompile Include="OXToolTipCtrl.cpp" />
+    <ClCompile Include="TTPropertyPage.cpp" />
+    <ClCompile Include="EnumSer.cpp" />
+    <ClCompile Include="SerialPort.cpp" />
+    <ClCompile Include="StatusDlg.cpp" />
+    <ClCompile Include="Protocols\EspritParser.cpp" />
+    <ClCompile Include="Protocols\EspritProtocol.cpp" />
+    <ClCompile Include="Protocols\ElanParser.cpp" />
+    <ClCompile Include="Protocols\ElanProtocol.cpp" />
+    <ClCompile Include="Protocols\GM1994CamaroZ28Parser.cpp" />
+    <ClCompile Include="Protocols\GM1994CamaroZ28Protocol.cpp" />
+    <ClCompile Include="Protocols\GM1992PontiacParser.cpp" />
+    <ClCompile Include="Protocols\GM1992PontiacProtocol.cpp" />
+    <ClCompile Include="Protocols\GM1989CorvetteParser.cpp" />
+    <ClCompile Include="Protocols\GM1989CorvetteProtocol.cpp" />
+    <ClCompile Include="Protocols\GM1993CamaroZ28Parser.cpp" />
+    <ClCompile Include="Protocols\GM1993CamaroZ28Protocol.cpp" />
+    <ClCompile Include="Protocols\GMA143Parser.cpp" />
+    <ClCompile Include="Protocols\GMA143Protocol.cpp" />
+    <ClCompile Include="Protocols\GMA140Parser.cpp" />
+    <ClCompile Include="Protocols\GMA140Protocol.cpp" />
+    <ClCompile Include="Protocols\LotusCarltonParser.cpp" />
+    <ClCompile Include="Protocols\LotusCarltonProtocol.cpp" />
+    <ClCompile Include="Protocols\GMA160Parser.cpp" />
+    <ClCompile Include="Protocols\GMA160Protocol.cpp" />
+    <ClCompile Include="Protocols\GMBaseFunctions.cpp" />
+    <ClCompile Include="Supervisor.cpp" />
+    <ClCompile Include="About.cpp" />
+    <ClCompile Include="HyperLink.cpp" />
+    <ClCompile Include="Led.cpp" />
+    <ClCompile Include="MABString.cpp" />
+    <ClCompile Include="AdvancedDlg.cpp" />
+    <ClCompile Include="DashBoardDlg.cpp" />
+    <ClCompile Include="DetailDlg.cpp" />
+    <ClCompile Include="EngineDlg.cpp" />
+    <ClCompile Include="EngineViewDlg.cpp" />
+    <ClCompile Include="FreeScan.cpp" />
+    <ClCompile Include="MainDlg.cpp" />
+    <ClCompile Include="RawMode00.cpp" />
+    <ClCompile Include="RawMode01.cpp" />
+    <ClCompile Include="SensorDlg.cpp" />
+    <ClCompile Include="StatusBitsDlg.cpp" />
+    <ClCompile Include="StdAfx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="TCodesDlg.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="font.h" />
+    <ClInclude Include="picture.h" />
+    <ClInclude Include="Protocols\ELM327Parser.h" />
+    <ClInclude Include="Protocols\ELM327Protocol.h" />
+    <ClInclude Include="rbgauge.h" />
+    <ClInclude Include="DesIdleDlg.h" />
+    <ClInclude Include="OXToolTipCtrl.h" />
+    <ClInclude Include="TTPropertyPage.h" />
+    <ClInclude Include="EnumSer.h" />
+    <ClInclude Include="SerialPort.h" />
+    <ClInclude Include="StatusDlg.h" />
+    <ClInclude Include="Protocols\EspritParser.h" />
+    <ClInclude Include="Protocols\EspritProtocol.h" />
+    <ClInclude Include="Protocols\ElanParser.h" />
+    <ClInclude Include="Protocols\ElanProtocol.h" />
+    <ClInclude Include="Protocols\GM1994CamaroZ28Parser.h" />
+    <ClInclude Include="Protocols\GM1994CamaroZ28Protocol.h" />
+    <ClInclude Include="Protocols\GM1992PontiacParser.h" />
+    <ClInclude Include="Protocols\GM1992PontiacProtocol.h" />
+    <ClInclude Include="Protocols\GM1989CorvetteParser.h" />
+    <ClInclude Include="Protocols\GM1989CorvetteProtocol.h" />
+    <ClInclude Include="Protocols\GM1993CamaroZ28Parser.h" />
+    <ClInclude Include="Protocols\GM1993CamaroZ28Protocol.h" />
+    <ClInclude Include="Protocols\GMA143Parser.h" />
+    <ClInclude Include="Protocols\GMA143Protocol.h" />
+    <ClInclude Include="Protocols\GMA140Parser.h" />
+    <ClInclude Include="Protocols\GMA140Protocol.h" />
+    <ClInclude Include="Protocols\LotusCarltonParser.h" />
+    <ClInclude Include="Protocols\LotusCarltonProtocol.h" />
+    <ClInclude Include="Protocols\GMA160Parser.h" />
+    <ClInclude Include="Protocols\GMA160Protocol.h" />
+    <ClInclude Include="Protocols\GMBaseFunctions.h" />
+    <ClInclude Include="Supervisor.h" />
+    <ClInclude Include="About.h" />
+    <ClInclude Include="HyperLink.h" />
+    <ClInclude Include="Led.h" />
+    <ClInclude Include="MABString.h" />
+    <ClInclude Include="AdvancedDlg.h" />
+    <ClInclude Include="DashBoardDlg.h" />
+    <ClInclude Include="DetailDlg.h" />
+    <ClInclude Include="EngineDlg.h" />
+    <ClInclude Include="EngineViewDlg.h" />
+    <ClInclude Include="FreeScan.h" />
+    <ClInclude Include="MainDlg.h" />
+    <ClInclude Include="RawMode00.h" />
+    <ClInclude Include="RawMode01.h" />
+    <CustomBuild Include="Resource.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">echo. &gt;"hlp\$(TargetName).hm" 
+echo // Commands (ID_* and IDM_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm ID_,HID_,0x10000 IDM_,HIDM_,0x10000 resource.h &gt;&gt;"hlp\$(TargetName).hm" 
+echo. &gt;&gt;"hlp\$(TargetName).hm" 
+echo // Prompts (IDP_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm IDP_,HIDP_,0x30000 resource.h &gt;&gt;"hlp\$(TargetName).hm" 
+echo. &gt;&gt;"hlp\$(TargetName).hm" 
+echo // Resources (IDR_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm IDR_,HIDR_,0x20000 resource.h &gt;&gt;"hlp\$(TargetName).hm" 
+echo. &gt;&gt;"hlp\$(TargetName).hm" 
+echo // Dialogs (IDD_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm IDD_,HIDD_,0x20000 resource.h &gt;&gt;"hlp\$(TargetName).hm" 
+echo. &gt;&gt;"hlp\$(TargetName).hm" 
+echo // Frame Controls (IDW_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm IDW_,HIDW_,0x50000 resource.h &gt;&gt;"hlp\$(TargetName).hm" </Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Making help include file...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">hlp\$(TargetName).hm;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">echo. &gt;"hlp\$(TargetName).hm" 
+echo // Commands (ID_* and IDM_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm ID_,HID_,0x10000 IDM_,HIDM_,0x10000 resource.h &gt;&gt;"hlp\$(TargetName).hm" 
+echo. &gt;&gt;"hlp\$(TargetName).hm" 
+echo // Prompts (IDP_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm IDP_,HIDP_,0x30000 resource.h &gt;&gt;"hlp\$(TargetName).hm" 
+echo. &gt;&gt;"hlp\$(TargetName).hm" 
+echo // Resources (IDR_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm IDR_,HIDR_,0x20000 resource.h &gt;&gt;"hlp\$(TargetName).hm" 
+echo. &gt;&gt;"hlp\$(TargetName).hm" 
+echo // Dialogs (IDD_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm IDD_,HIDD_,0x20000 resource.h &gt;&gt;"hlp\$(TargetName).hm" 
+echo. &gt;&gt;"hlp\$(TargetName).hm" 
+echo // Frame Controls (IDW_*) &gt;&gt;"hlp\$(TargetName).hm" 
+makehm IDW_,HIDW_,0x50000 resource.h &gt;&gt;"hlp\$(TargetName).hm" </Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Making help include file...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">hlp\$(TargetName).hm;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="SensorDlg.h" />
+    <ClInclude Include="StatusBitsDlg.h" />
+    <ClInclude Include="StdAfx.h" />
+    <ClInclude Include="TCodesDlg.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Protocols\Lotus Esprit ALDL.doc">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\Lotus Elan.txt" />
+    <CustomBuild Include="Protocols\GM Camaro Z28.doc">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\GM Pontiac 3_4.doc">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\GM Chevrolet 89 Corvette.doc">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="Protocols\GM Camaro 92-93Y 93F.txt" />
+    <CustomBuild Include="Protocols\A27.txt" />
+    <CustomBuild Include="Protocols\A34.txt" />
+    <CustomBuild Include="Protocols\A143.txt" />
+    <CustomBuild Include="Protocols\A55.txt" />
+    <CustomBuild Include="Protocols\A140.txt" />
+    <CustomBuild Include="Protocols\A160.txt" />
+    <CustomBuild Include="hlp\FreeScan.hpj">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="res\bitmap1.bmp" />
+    <CustomBuild Include="res\bmp00001.bmp" />
+    <CustomBuild Include="res\bmp00002.bmp" />
+    <CustomBuild Include="res\FreeScan.ico" />
+    <CustomBuild Include="res\FreeScan.rc2">
+      <FileType>RC</FileType>
+    </CustomBuild>
+    <CustomBuild Include="res\leds.bmp" />
+    <CustomBuild Include="res\logo.bmp" />
+    <CustomBuild Include="hlp\AfxDlg.rtf">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="hlp\FreeScan.cnt">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy "hlp\%(Filename).cnt" $(OutDir)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Copying contents file...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)\$(InputName).cnt;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "hlp\%(Filename).cnt" $(OutDir)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying contents file...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)\$(InputName).cnt;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="hlp\FreeScan.hm">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FreeScan.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

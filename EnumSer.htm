@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<title>EnumSerialPorts v1.04</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="left"><img src="enumser.gif" width="32" height="32"> <font color="#000000"
+size="6" face="Arial"><strong>EnumSerialPorts v1.04</strong></font></p>
+
+<p><font color="#000000" face="Arial" size="3">Welcome to EnumSerialPorts, A simple
+MFC function to enumerate the serial ports installed on your machine.</font></p>
+
+<p>&nbsp;</p>
+
+<table>
+  <tr>
+    <td><font face="Arial"><a href="#Features">Features</a></font></td>
+  </tr>
+  <tr>
+    <td><font face="Arial"><a href="#Usage">Usage</a></font></td>
+  </tr>
+  <tr>
+    <td><font face="Arial"><a href="#Copyright">Copyright</a></font></td>
+  </tr>
+  <tr>
+    <td><font face="Arial"><a href="#History">History</a></font></td>
+  </tr>
+  <tr>
+    <td><font face="Arial"><a href="#APIReference">API Reference</a></font></td>
+  </tr>
+  <tr>
+    <td><font face="Arial"><a href="#Contact">Contacting the Author</a></font></td>
+  </tr>
+</table>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p><font face="Arial"><a name="Features"></a><big><strong><big>Features</big></strong></big>
+</font>
+
+<ul>
+  <li><font color="#000000" face="Arial" size="3">Simple C style function interface.</font></li>
+  <li><font color="#000000" face="Arial" size="3">The code works on both Windows 95/98 and NT.
+    Internally the code calls GetDefaultCommConfig which does not require a call
+    to open the port.</font></li>
+  <li><font color="#000000" face="Arial" size="3">The code is fully Unicode compliant and
+    include Unicode built options in the workspace file.</font></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p><a name="Usage"></a><font face="Arial"><big><big><strong>Usage</strong></big></big></font>
+
+<ul>
+  <li><font color="#000000" face="Arial" size="3">To use the function in your code simply
+    include enumser.cpp in your project and #include enumser.h in which ever of your modules
+    needs to make calls to the function.</font></li>
+  <li><font face="Arial">Your code will need to include MFC either statically or dynamically.</font></li>
+  <li><font face="Arial">To see the class in action, have a look at the main function in the
+    module &quot;main.cpp&quot;.</font></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p><b><font face="Arial" size="5"><a name="Copyright"></a>Copyright</font></b></p>
+<ul>
+  <li><font face="Arial" size="3">You are allowed to include the source code in
+    any product (commercial, shareware, freeware or otherwise) when your product
+    is released in binary form.</font></li>
+  <li><font face="Arial" size="3">You are allowed to modify the source code in
+    any way you want except you cannot modify the copyright details at the top
+    of each module.</font></li>
+  <li><font face="Arial" size="3">If you want to distribute source code with
+    your application, then you are only allowed to distribute versions released
+    by the author. This is to maintain a single distribution point for the
+    source code.</font></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p><font face="Arial"><big><a name="History"></a></big><font color="#000000" size="5"><strong>History</strong></font></font></p>
+
+<p><font color="#000000" face="Arial" size="3"><strong>v1.0 (3 November 1998)</strong></font>
+
+<ul>
+  <li><font color="#000000" face="Arial" size="3">Initial public release.</font></li>
+</ul>
+
+<p><font color="#000000" face="Arial" size="3"><strong>v1.01 (23 February 1999)</strong></font>
+
+<ul>
+  <li><font color="#000000" face="Arial" size="3">Code now uses QueryDosDevice
+    if running on NT to determine which serial ports are available. This avoids having to open the
+    ports at all. It should operate a lot faster in addition.</font></li>
+</ul>
+
+<p><font color="#000000" face="Arial" size="3"><strong>v1.02 (12 December 1999)</strong></font>
+
+<ul>
+  <li><font face="Arial">Fixed a problem in the Win9x code path when trying to
+    detect deactivated IRDA-ports.  When trying to open those, you will get the error-code
+    ERROR_GEN_FAILURE.&nbsp;</font></li>
+</ul>
+
+<p><font color="#000000" face="Arial" size="3"><strong>v1.03 (17 May 2000)</strong></font>
+
+<ul>
+  <li><font face="Arial">Code now uses GetDefaultCommConfig in all cases to detect                          the ports.</font></li>
+</ul>
+
+<p><font color="#000000" face="Arial" size="3"><strong>v1.04 (29 March 2001)</strong></font>
+
+<ul>
+  <li><font face="Arial"> Reverted code to use CreateFile or QueryDosDevice as it is                          much faster than using the GetDefaultCommConfig
+    method.</font></li>
+  <li><font face="Arial">Updated copyright message.</font></li>
+</ul>
+
+<p class="crt">&nbsp;</p>
+
+<p class="crt">&nbsp;</p>
+
+<p class="crt">&nbsp;</p>
+
+<p class="crt"><font face="Arial"><a name="APIReference"></a><big><big><strong>API
+Reference</strong></big></big></font></p>
+
+<p><a name="Start"></a><big><strong><font face="Arial">EnumerateSerialPorts</font></strong></big></p>
+
+<p><strong><font face="Arial">void ::EnumerateSerialPorts(CUIntArray&amp;&nbsp; ports);</font></strong></p>
+
+<p><font face="Arial"><strong>Parameters</strong></font></p>
+
+<p><font face="Arial"><em>ports</em> Upon return this array will contain the port numbers
+of all the serial ports installed on the computer</font></p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p><font face="Arial"><a name="Contact"></a><font color="#000000" size="4"><strong>CONTACTING
+THE AUTHOR</strong></font></font></p>
+
+<p><font color="#000000" face="Arial" size="3">PJ Naughter<br>
+Email: <a href="mailto:pjna@naughter.com">pjna@naughter.com</a><br>
+Web: <a href="http://www.naughter.com">http://www.naughter.com</a><br>
+29 March 2001</font></p>
+</body>
+</html>

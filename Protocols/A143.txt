@@ -1,0 +1,372 @@
+
+
+
+                         DATA STREAM A143 SPECIFICATION
+
+
+   SPECIFICATIONS FOR DATA STREAM INFORMATION
+   ------------------------------------------
+
+   ENGINE USAGE:
+             3300 MFI   (LG7)   (VIN=N)    91    A,N-CAR
+             3300 MFI   (LG7)   (VIN=N)    92    3,4A 2,3,4N cars
+             3300 MFI   (LG7)   (VIN=N)    93    3,4A 2,3,4N cars
+
+
+   DATA PIN: READ DATA ON PIN "M" OF ALDL CONNECTOR
+
+   BAUD RATE: 8192
+              This is a GMP4 FULL FUNCTION ECM.
+
+        67 BYTES OF DATA IN OPEN AND SHORTED MODE
+..PAGE
+
+        MODE 0 (RETURN TO NORMAL MODE)
+                ALDL REQUEST:
+                - MESSAGE ID     = $F0
+                - MESSAGE LENGTH = $56
+                - MODE           = $00
+                - SUM CHECK
+
+                THE ECM WILL RESPOND WITH THE FOLLOWING MESSAGE:
+                - MESSAGE ID     = $F0
+                - MESSAGE LENGTH = $56
+                - MODE           = $00
+                - SUM CHECK
+
+
+        MODE 1 (TRANSMIT FIXED DATA STREAM)
+                ALDL REQUEST:
+                - MESSAGE ID     = $F0
+                - MESSAGE LENGTH = $56
+                - MODE           = $01
+                - SUM CHECK
+
+                THE ECM WILL RESPOND WITH THE FOLLOWING MESSAGE:
+                - MESSAGE ID     = $F0
+                - MESSAGE LENGTH = $99
+                - MODE           = $01
+                - DATA BYTE 1
+                  .
+                  .
+                - DATA BYTE 67
+                - SUM CHECK
+
+
+
+..HEAD02L ALDL NORMAL MESSAGE *F9MSG3*   (F0 POLL)
+
+        MESSAGE CODE $F0 IS USED BY THE ECM TO POLL FOR THE PRESENCE
+        OF AN ALDL TESTING DEVICE.  IT IS TRANSMITTED FROM THE ECM
+        WITH THE FOLLOWING FORMAT
+
+                - MESSAGE CODE = $F0
+                - MESSAGE LENGTH
+                - SUM CHECK
+
+
+        IF AN ALDL DEVICE IS PRESENT, IT SHOULD RESPOND WITH THE FOLLOWING
+        MESSAGE:
+
+                - MESSAGE CODE = $F0
+                - MESSAGE LENGTH = 85 + 0 = 85 = $55
+                - SUM CHECK
+
+
+..PAGE
+..HEAD02L ALDL DATA LIST
+..head03L NUMBER OF DATA WORDS - 67
+..head04L ALDL MODE 1 DATA LIST
+ WORD #     DATA NAME                   DESCRIPTION
+
+   1        MW1      ( MINOR LOOP WORD 1 )
+                7  ENGINE RUNNING FLAG (1 = RUNNING)
+                6  M42A PASSED - ALLOW CHECK OF M42B
+                   (EST CODE 42 CHECK IN BYPASS w/ ENGINE RUNNING)
+                5  AC CLUTCH FLAG 0 = ON   1 = OFF(0 = AC CLUTCH ON)
+                4  TCC ROAD SPEED 1st PULSE FLAG
+                3  TIMING ERROR CHECK BIT (1 = ERROR)
+                   (SOFTWARE TIMING NOT VEHICLE TIMING)
+                2  INTERRUPT SERVICE EXECUTION EXCEEDED 6.25 MSEC.
+                1  BIT = 1 MEANS IN HOT OPEN LOOP
+                0  1=TPS TIP-IN / TIP-OUT FLAG FOR  IAC MOTOR
+   2        MW2      ( MINOR LOOP WORD 2 )
+                7  2nd. ENG. RUN FLAG FOR CRANK FUEL
+                6  BIT = 1 MEANS HIGH BATTERY VOLTAGE - 1st PASS
+                5  BIT = 1 MEANS HIGH BATTERY VOLTAGE - 2ND PASS
+                (2nd PASS - DISABLE OUTPUTS)
+                4  BIT = 1 MEANS IN SERIAL DATA SERVICE DIAGNOSTIC MODE
+                3  BIT = 1 MEANS AT ALTITUDE (FOR SERIAL DATA USE ONLY)
+                2  REFERENCE PULSE OCCURRED (6.25 MSEC. CHECK)
+                1  1=A/C SHUTOFF FOR LEARNING
+                0  1=RAMP DECEL ENLEANMENT FLAG
+   3        MCUINST  ( MINOR LOOP WORD )
+                7  1 = OFF 0 = ON               (1 = A/C REQUESTED)
+                6  1 = ON  0 = OFF              (1 = P/S CRAMP)
+                5  1 = CRUSE ACTIVE
+                4  1 = NOT USED
+                3  1 = OFF 0 = ON               (0 = IN 4th GEAR)
+                2  1 = OFF 0 = ON               (0 = IN 3rd GEAR)
+                1  1 = OFF 0 = ON               (0 = IN 2nd GEAR)
+                0  1 = ON  0 = OFF              (1 = IN P/N)
+   4        DIAGMW3 (STATUS OF SC1 INPUT DISCRETES)
+                7  0 = QDM FAULT 4 ( NOT USED )
+                6  0 = QDM FAULT 3
+                5  0 = QDM FAULT 2
+                4  0 = QDM FAULT 1
+                3  NOT USED
+                2  NOT USED
+                1  0 = BRAKE ON  (FROM SC1SDI)
+                0  1 = HAVE HAD P/N TO AE ONCE
+   5        PIDMW1 (IDLE AIR CONTROL MODE WORD)
+                7  BIT = 1 MEANS AC REQUEST IS OFF
+                6  BIT = 1 MEANS AC BEING CONTROLLED
+                5  BIT = 1 MEANS AC COMPENSATION STEPS BEING REMOVED
+                4  THROTTLE FOLLOWER FLAG (1 = DECAY OR RISE)
+                3  IDLE SPEED MOTOR DIRECTION FLAG, OPEN LOOP & THROTTLE
+                   FOLLOWER (1 = EXTEND MOTOR, DECREASE AIR)
+                2  IDLE SPEED OPEN LOOP FLAG (1 = NO, 0 = YES)
+                1  IDLE SPEED OPEN LOOP SPEED GT COMMAND (1 = YES)
+                0  AC COMPENSATION BEING LEARNED (1 = YES)
+   6        PIDMW2 (IDLE AIR CONTROL MODE WORD)
+                7  BIT = 1 MEANS P/N STATUS IN NEUTRAL
+                6  BIT = 1 MEANS P/N STATUS WAS IN NEUTRAL LAST CYCLE
+                5  HOT START IDLE SPEED OFFSET
+                4  1 = PROPORTIONAL STEP TAKEN
+                3  1 = DERIVITIVE STEP TAKEN
+                2  1 = INTEGRAL STEP TAKEN
+                1  COPY OF OPEN FLAG - USED IN PND IAC
+                0  BIT = 1 MEANS MIN. MOTOR LEARNED
+   7        MWFA (FUEL-AIR MODE WORD)
+                7  FLIP/FLOP FOR 3.125 OR 6.25 LOGIC
+                6  HIGH LIMIT FUEL CUTOFF ENABLED
+                5  POWER ENRICHMENT FLAG (1 = PE IS ACTIVE)
+                4  HAVE HAD DRIVE TO P/N TRANSITION
+                3  DELAY BLM UPDATE (1 = BL ADDR CHANGE)
+                2  BL ADDRESS CHANGE FLAG (1 = CHANGE)
+                1  BIT = 1 MEANS DECEL FUEL CUTOFF ENABLED
+                0  BIT = 1 MEANS DECEL ENLEANMENT ENABLED
+   8        MWFA1 (FUEL AIR MODE WORD)
+                7  OL/CL FLAG (1 = CLOSED LOOP, 0 = OPEN LOOP)
+                6  RICH-LEAN FLAG (1 = RICH, 0 = LEAN)
+                5  FIRST TIME CLOSED LOOP FLAG
+                4  FATC FILTER ACTIVE (COOLANT TEMP AIR-FUEL RATIO)
+                3  PROP STEP TAKEN FLAG (1 = RICH STEP, 0 = LEAN STEP)
+                2  FATI FILTER ACTIVE (TIMEOUT AIR FUEL RATIO)
+                1  LEARN CONTROL ENABLE FLAG (1 = ENABLE STORE, 0 = DISABLE)
+                0  200 MSEC. OLD P/N BIT FROM MCUINST (BYTE 3)
+   9        LCCPMW
+                7  1 = HIGH  0 = NO           A/C HIGH A/C PRESSURE SWITCH
+                6  1 = CANISTER IS CLEAN (CCP)
+                5  1 = ENGINE HOT LIGHT ON
+                4  1 = FAN 2 ON
+                3  1 = ON  0 = OFF           (1 = TCC LOCKED)
+                2  1 = IDLE FLAG FOR C/L
+                1  1 = FAN 1 ON
+                0  1 = CCP PURGE ON
+   10       NTPSLD     THROTTLE POSITION LOAD
+                        % = N/2.55
+   11       COOLDEGA   COOLANT TEMPERATURE, LINEARIZED
+                        DEG C = (N * .75) - 40
+                         (deg F = 1.35N - 40)
+   12       COOLTSU    START UP COOLANT TEMPERATURE
+                        DEG C = (N * .75) - 40
+                         (deg F = 1.35N - 40)
+   13       ADTHROT    THROTTLE POSITION, A/D
+                        VOLTS = N * 5/256
+   14       NTRPMX     ENGINE SPEED (RPM) VARIABLE
+                        RPM = N * 25
+   15       NEWRFPER   TIME BETWEEN REFERENCE PULSES (MSB)
+   16       NEWRFPER+1 TIME BETWEEN REFERENCE PULSES (LSB)
+                        RPM = 1,310,720 / (MSB * 256 + LSB)
+   17       FILTMPH    FILTERED MILES PER HOUR (LSB)
+                        MPH = N
+                        (kph = 1.61N)
+   18                   NOT USED
+   19       LV8        FILTERED LOAD VARIABLE (COUNTS)
+                        N = A/D COUNTS
+   20       ADO2AF     OXYGEN SENSOR VARIABLE (MILLIVOLTS = N * 4.44)
+                        MILLVOLTS = N*4.44
+   21       ACNTDEL    O2 CROSS COUNTS IN LAST SECOND (NUMBER) DELTA
+                        N = COUNTS
+   22       CORRCL     BASE PULSE (FUEL) C.L. FINE CORRECTION (COUNTS)
+                        N = COUNTS
+   23       BLM        BLOCK LEARN MULTIPLIER, SCALED 1, RANGE 0 - 2.0
+                        N = COUNTS
+   24       BLMCELL    CURRENT BLOCK LEARN MULTIPLIER CELL (NUMBER 0 - 15)
+   25       ISSPMP     IDLE SPEED, PRESENT IAC MOTOR POSITION (COUNTS)
+                        N = IAC STEPS
+   26       ISESDD     DESIRED IDLE SPEED
+                        RPM = N * 12.5
+   27       ACPRES     AIR CONDITIONING PRESSURE TRANSDUCER
+                        N = A/D COUNTS
+   28       TESTBYTE   RESERVED FOR TESTING FOR STACK OVERWRITE
+   29       PURGEDC    CHARCOAL CANISTER PURGE DUTY CYCLE
+                        % DC = N / 2.56
+   30       ADBAT      BATTERY VOLTAGE AD COUNTS
+                         VOLTS = N / 10
+   31       DISPFLOW   MASS AIR FLOW VARIABLE IN GRAMS/SEC. (MSB)
+   32       DISPFLOW+1 MASS AIR FLOW VARIABLE IN GRAMS/SEC. (LSB)
+                        GRAMS/SEC. = MSB + (LSB * .00390625)
+   33       SAP        TOTAL UNLIMITED SPARK ADVANCE REL. TO TDC (MSB)
+   34       SAP+1      TOTAL UNLIMITED SPARK ADVANCE REL. TO TDC (LSB)
+                       double byte value in 2's complement representation
+                       If Bit 7 of MSB = 0  then result is positive
+                        value = (MSB * 256 + LSB)
+                       If Bit 7 of MSB = 1  then result is negative
+                        value = 65536 - (MSB * 256 + LSB)
+                        DEGREES = VALUE * 90/256
+   35       OLDPA3     ELECTRONIC SPARK CONTROL (KNOCK) SIGNAL INPUT
+                         NUMBER = COUNTER VALUE
+   36       NOCKRTD    ELECTRONIC SPARK CONTROL (KNOCK) ECM OUTPUT
+                        DEG = N * .176
+   37       BPW        INJECTOR BASE PULSE WIDTH (MSB)
+   38       BPW+1      INJECTOR BASE PULSE WIDTH (LSB)
+                        MS = (MSB * 256 + LSB) / 65.536
+   39       FAVAL      TOTAL FUEL AIR VALVE (MSB)
+   40       FAVAL+1    TOTAL FUEL AIR VALVE (LSB)
+                        A/F RATIO = 65536 / [40 * (MSB * 256 + LSB)]
+   41       ACUMFUEL   RUNNING TOTAL OF FUEL DELIVERED (MSB)
+   42       ACUMFUEL+1 RUNNING TOTAL OF FUEL DELIVERED (LSB)
+                        GALLONS = (MSB * 256 + LSB)/22,259
+                        NOTE: THIS IS 0 ON START UP AND WILL ROLLOVER
+   43       ACUMDIST   RUNNING TOTAL OF DIST. TRAVELED
+                        MILES = N * .0005
+   44       TIME       ENGINE RUNNING TIME IN SECONDS (MSB)
+   45       TIME+1     ENGINE RUNNING TIME IN SECONDS (LSB)
+                        SECOND = (MSB * 256 + LSB)
+   46       MALFFLG1   HISTORY MALF FLAG WORD 1
+                7  HISTORY CODE 13 - O2 SENSOR
+                6  HISTORY CODE 14 - COOLANT SENSOR HIGH
+                5  HISTORY CODE 15 - COOLANT SENSOR LOW
+                4  HISTORY CODE 16 - BATTERY VOLTAGE HIGH
+                3  HISTORY CODE 17 - NOT USED
+                2  HISTORY CODE 18 - NOT USED
+                1  HISTORY CODE 19 - NOT USED
+                0  HISTORY CODE 21 - THROTTLE POSITION HIGH
+   47        MALFFLG2   HISTORY MALF FLAG WORD 2
+                7  HISTORY CODE 22 - THROTTLE POSITION LOW
+                6  HISTORY CODE 23 - NOT USED
+                5  HISTORY CODE 24 - VEHICLE SPEED SENSOR LOW
+                4  HISTORY CODE 25 - NOT USED
+                3  HISTORY CODE 26 - QDM FAILURE
+                2  HISTORY CODE 27 - 2nd GEAR SWITCH FAILURE
+                1  HISTORY CODE 28 - 3rd GEAR SWITCH FAILURE
+                0  HISTORY CODE 29 - 4th GEAR SWITCH FAILURE
+   48        MALFFLG3   HISTORY MALF FLAG WORD 3
+                7  HISTORY CODE 31 - P/N SWITCH FAILURE
+                6  HISTORY CODE 32 - NOT USED
+ *              5  HISTORY CODE 33 - MASS AIR FLOW SENSOR HIGH
+ *              4  HISTORY CODE 34 - MASS AIR FLOW SENSOR LOW
+                3  HISTORY CODE 35 - NOT USED
+                2  HISTORY CODE 36 - NOT USED
+                1  HISTORY CODE 37 - NOT USED
+                0  HISTORY CODE 38 - BRAKE SWITCH FAILURE
+   49        MALFFLG4   HISTORY MALF FLAG WORD 4
+                7  HISTORY CODE 39 - TCC FAILURE
+                6  HISTORY CODE 41 - NOT USED
+                5  HISTORY CODE 42 - EST FAILURE
+                4  HISTORY CODE 43 - ESC FAILURE
+                3  HISTORY CODE 44 - O2 SENSOR LEAN
+                2  HISTORY CODE 45 - O2 SENSOR RICH
+                1  HISTORY CODE 46 - POWER STEERING PRESSURE SWITCH
+                0  HISTORY CODE 47 - NOT USED
+   50        MALFFLG5   HISTORY MALF FLAG WORD 5
+                7  HISTORY CODE 48 - MISFIRE
+                6  HISTORY CODE 49 - VACUUM LEAK
+                5  HISTORY CODE 51 - PROM ERROR
+                4  HISTORY CODE 52 - NOT USED
+                3  HISTORY CODE 53 - NOT USED
+                2  HISTORY CODE 54 - NOT USED
+                1  HISTORY CODE 55 - NOT USED
+                0  HISTORY CODE 56 - NOT USED
+   51        TESTBYTE
+   52        MALFFLG7   HISTORY MALF FLAG WORD 7
+                7  HISTORY CODE 66 - A/C PRESSURE TRANSDUCER FAILURE
+                6  HISTORY CODE 67 - NOT USED
+                5  HISTORY CODE 68 - NOT USED
+                4  HISTORY CODE 69 - NOT USED
+                3  HISTORY CODE 88 - RESET
+                2  HISTORY CODE 72 - NOT USED
+                1  HISTORY CODE 73 - NOT USED
+                0  HISTORY CODE 74 - NOT USED
+   53        TESTBYTE
+   54        MALFFLG7   HISTORY MALF FLAG WORD 7
+                7  HISTORY CODE 66 - A/C PRESSURE TRANSDUCER FAILURE
+                6  HISTORY CODE 67 - NOT USED
+                5  HISTORY CODE 68 - NOT USED
+                4  HISTORY CODE 69 - NOT USED
+                3  HISTORY CODE 88 - RESET
+                2  HISTORY CODE 72 - NOT USED
+                1  HISTORY CODE 73 - NOT USED
+                0  HISTORY CODE 74 - NOT USED
+   55        TESTBYTE
+   56        CURMALF1 - CURRENT MALF FLAG WORD 1
+                7  CURRENT CODE 13 - O2 SENSOR
+                6  CURRENT CODE 14 - COOLANT SENSOR HIGH
+                5  CURRENT CODE 15 - COOLANT SENSOR LOW
+                4  CURRENT CODE 16 - BATTERY VOLTAGE HIGH
+                3  CURRENT CODE 17 - NOT USED
+                2  CURRENT CODE 18 - NOT USED
+                1  CURRENT CODE 19 - NOT USED
+                0  CURRENT CODE 21 - THROTTLE POSITION HIGH
+   57        CURMALF2 - CURRENT MALF FLAG WORD 2
+                7  CURRENT CODE 22 - THROTTLE POSITION LOW
+                6  CURRENT CODE 23 - NOT USED
+                5  CURRENT CODE 24 - VEHICLE SPEED SENSOR LOW
+                4  CURRENT CODE 25 - VEHICLE SPEED SENSOR HIGH
+                3  CURRENT CODE 26 - QDM FAILURE
+                2  CURRENT CODE 27 - 2nd GEAR SWITCH FAILURE
+                1  CURRENT CODE 28 - 3rd GEAR SWITCH FAILURE
+                0  CURRENT CODE 29 - 4th GEAR SWITCH FAILURE
+   58        CURMALF3 - CURRENT MALF FLAG WORD 3
+                7  CURRENT CODE 31 - P/N SWITCH FAILURE
+                6  CURRENT CODE 32 - NOT USED
+                5  CURRENT CODE 33 - MASS AIR FLOW SENSOR LOW
+                4  CURRENT CODE 34 - MASS AIR FLOW SENSOR HIGH
+                3  CURRENT CODE 35 - NOT USED
+                2  CURRENT CODE 36 - NOT USED
+                1  CURRENT CODE 37 - NOT USED
+                0  CURRENT CODE 38 - BRAKE SWITCH FAILURE
+   59        CURMALF4 - CURRENT MALF FLAG WORD 4
+                7  CURRENT CODE 39 - TCC FAILURE
+                6  CURRENT CODE 41 - CAM SENSOR FAILURE
+                5  CURRENT CODE 42 - EST FAILURE
+                4  CURRENT CODE 43 - ESC FAILURE
+                3  CURRENT CODE 44 - O2 SENSOR LEAN
+                2  CURRENT CODE 45 - O2 SENSOR RICH
+                1  CURRENT CODE 46 - POWER STEERING PRESSURE SWITCH
+                0  CURRENT CODE 47 - UART LINK FAILURE
+   60        CURMALF5   CURRENT MALF FLAG WORD 5
+                7  CURRENT CODE 48 - MISFIRE
+                6  CURRENT CODE 49 - VACUUM LEAK
+                5  CURRENT CODE 51 - PROM ERROR
+                4  CURRENT CODE 52 - NOT USED
+                3  CURRENT CODE 53 - NOT USED
+                2  CURRENT CODE 54 - NOT USED
+                1  CURRENT CODE 55 - NOT USED
+                0  CURRENT CODE 56 - NOT USED
+   61        TESTBYTE
+   62        CURMALF7   CURRENT MALF FLAG WORD 7
+                7  CURRENT CODE 66 - A/C PRESSURE TRANSDUCER FAILURE
+                6  CURRENT CODE 67 - NOT USED
+                5  CURRENT CODE 68 - NOT USED
+                4  CURRENT CODE 69 - NOT USED
+                3  CURRENT CODE 88 - RESET
+                2  CURRENT CODE 72 - NOT USED
+                1  CURRENT CODE 73 - NOT USED
+                0  CURRENT CODE 74 - NOT USED
+   63        TESTBYTE
+   64        CURMALF7   CURRENT MALF FLAG WORD 7
+                7  CURRENT CODE 66 - A/C PRESSURE TRANSDUCER FAILURE
+                6  CURRENT CODE 67 - NOT USED
+                5  CURRENT CODE 68 - NOT USED
+                4  CURRENT CODE 69 - NOT USED
+                3  CURRENT CODE 88 - RESET
+                2  CURRENT CODE 72 - NOT USED
+                1  CURRENT CODE 73 - NOT USED
+                0  CURRENT CODE 74 - NOT USED
+   65        TESTBYTE
+   66        PROMIDA   FIRST PROM I.D. WORD (MSB)
+   67        PROMIDA+1  SECOND PROM I.D. WORD (LSB)
+                       PROM ID = (MSB * 256 + LSB)

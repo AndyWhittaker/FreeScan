@@ -2,9 +2,8 @@
 Module : enumser.h
 Purpose: Defines the interface for a class to enumerate the serial ports installed on a PC
          using a number of different approaches
-Created: PJN / 03-11-1998
 
-Copyright (c) 1998 - 2012 by PJ Naughter (Web: www.naughter.com, Email: pjna@naughter.com)
+Copyright (c) 1998 - 2017 by PJ Naughter (Web: www.naughter.com, Email: pjna@naughter.com)
 
 All rights reserved.
 
@@ -19,7 +18,7 @@ to maintain a single distribution point for the source code.
 */
 
 
-///////////////////////// Macros / Structs etc ////////////////////////////////
+///////////////////////// Macros / Defines ////////////////////////////////////
 
 #pragma once
 
@@ -28,33 +27,54 @@ to maintain a single distribution point for the source code.
 
 #ifndef CENUMERATESERIAL_EXT_CLASS
 #define CENUMERATESERIAL_EXT_CLASS
-#endif
+#endif //#ifndef CENUMERATESERIAL_EXT_CLASS
+
+#ifndef _Return_type_success_
+#define _Return_type_success_(expr)
+#endif //#ifndef _Return_type_success_
+
+#ifndef _In_
+#define _In_
+#endif //#ifndef _In_
+
+#ifndef _Out_
+#define _Out_
+#endif //#ifndef _Out_
+
+#ifndef _Inout_
+#define _Inout_
+#endif //#ifndef _Inout_
 
 
 ///////////////////////// Includes ////////////////////////////////////////////                      
 
-#if defined CENUMERATESERIAL_USE_STL
-#ifndef _VECTOR_
-  #include <vector>
-  #pragma message("To avoid this message, please put vector in your pre compiled header (normally stdafx.h)")
-#endif  
-#ifndef _STRING_
-  #include <string>
-  #pragma message("To avoid this message, please put string in your pre compiled header (normally stdafx.h)")
-#endif  
-#endif
+#ifndef __ATLBASE_H__
+#pragma message("To avoid this message, please put atlbase.h in your pre compiled header (normally stdafx.h)")
+#include <atlbase.h>
+#endif //#ifndef __ATLBASE_H__
 
-#if defined _AFX
-  #ifndef __AFXTEMPL_H__
-    #include <afxtempl.h> 
-    #pragma message("To avoid this message, please put afxtempl.h in your pre compiled header (normally stdafx.h)")
-  #endif
+#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+  #ifndef _VECTOR_
+    #pragma message("To avoid this message, please put vector in your pre compiled header (normally stdafx.h)")
+    #include <vector>
+  #endif //#ifndef _VECTOR_
+  #ifndef _STRING_
+    #pragma message("To avoid this message, please put string in your pre compiled header (normally stdafx.h)")
+    #include <string>
+  #endif //#ifndef _STRING_
 #else
-  #ifndef __ATLSTR_H__
-    #include <atlstr.h>
-    #pragma message("To avoid this message, please put atlstr.h in your pre compiled header (normally stdafx.h)")
-  #endif  
-#endif
+  #ifdef _AFX
+    #ifndef __AFXTEMPL_H__
+      #pragma message("To avoid this message, please put afxtempl.h in your pre compiled header (normally stdafx.h)")
+      #include <afxtempl.h> 
+    #endif //#ifndef __AFXTEMPL_H__
+  #else
+    #ifndef __ATLSTR_H__
+      #pragma message("To avoid this message, please put atlstr.h in your pre compiled header (normally stdafx.h)")
+      #include <atlstr.h>
+    #endif //#ifndef __ATLSTR_H__
+  #endif //#ifdef _AFX
+#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
 
 
 ///////////////////////// Classes /////////////////////////////////////////////
@@ -62,196 +82,70 @@ to maintain a single distribution point for the source code.
 class CENUMERATESERIAL_EXT_CLASS CEnumerateSerial
 {
 public:
+//Typdefs
+#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+  typedef std::vector<UINT> CPortsArray;
+#ifdef _UNICODE
+  typedef std::vector<std::wstring> CNamesArray;
+#else
+  typedef std::vector<std::string> CNamesArray;
+#endif
+#elif defined _AFX
+  typedef CUIntArray CPortsArray;
+  typedef CStringArray CNamesArray;
+#else
+  typedef CSimpleArray<UINT> CPortsArray;
+  typedef CSimpleArray<ATL::CString> CNamesArray;
+#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+
 //Methods
-#ifndef NO_ENUMSERIAL_USING_CREATEFILE
-  #if defined CENUMERATESERIAL_USE_STL
-  	static BOOL UsingCreateFile(std::vector<UINT>& ports);
-  #elif defined _AFX
-  	static BOOL UsingCreateFile(CUIntArray& ports);
-  #else
-      static BOOL UsingCreateFile(CSimpleArray<UINT>& ports);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_CREATEFILE
+  static _Return_type_success_(return != 0) BOOL UsingCreateFile(_Inout_ CPortsArray& ports);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_CREATEFILE
 
-#ifndef NO_ENUMSERIAL_USING_QUERYDOSDEVICE
-  #if defined CENUMERATESERIAL_USE_STL
-    static BOOL UsingQueryDosDevice(std::vector<UINT>& ports);
-  #elif defined _AFX
-    static BOOL UsingQueryDosDevice(CUIntArray& ports);
-  #else
-    static BOOL UsingQueryDosDevice(CSimpleArray<UINT>& ports);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_QUERYDOSDEVICE
+  static _Return_type_success_(return != 0) BOOL UsingQueryDosDevice(_Inout_ CPortsArray& ports);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_QUERYDOSDEVICE
 
-#ifndef NO_ENUMSERIAL_USING_GETDEFAULTCOMMCONFIG
-  #if defined CENUMERATESERIAL_USE_STL
-	static BOOL UsingGetDefaultCommConfig(std::vector<UINT>& ports);
-  #elif defined _AFX
-    static BOOL UsingGetDefaultCommConfig(CUIntArray& ports);
-  #else
-    static BOOL UsingGetDefaultCommConfig(CSimpleArray<UINT>& ports);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_GETDEFAULTCOMMCONFIG
+  static _Return_type_success_(return != 0) BOOL UsingGetDefaultCommConfig(_Inout_ CPortsArray& ports);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_GETDEFAULTCOMMCONFIG
 
-#ifndef NO_ENUMSERIAL_USING_SETUPAPI1
-  #if defined CENUMERATESERIAL_USE_STL
-    #if defined _UNICODE
-      static BOOL UsingSetupAPI1(std::vector<UINT>& ports, std::vector<std::wstring>& friendlyNames);
-    #else
-      static BOOL UsingSetupAPI1(std::vector<UINT>& ports, std::vector<std::string>& friendlyNames);
-    #endif
-  #elif defined _AFX
-    static BOOL UsingSetupAPI1(CUIntArray& ports, CStringArray& friendlyNames);
-  #else
-    static BOOL UsingSetupAPI1(CSimpleArray<UINT>& ports, CSimpleArray<CString>& friendlyNames);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_SETUPAPI1
+  static _Return_type_success_(return != 0) BOOL UsingSetupAPI1(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_SETUPAPI1
 
-#ifndef NO_ENUMSERIAL_USING_SETUPAPI2
-  #if defined CENUMERATESERIAL_USE_STL
-    #if defined _UNICODE
-      static BOOL UsingSetupAPI2(std::vector<UINT>& ports, std::vector<std::wstring>& friendlyNames);
-    #else
-      static BOOL UsingSetupAPI2(std::vector<UINT>& ports, std::vector<std::string>& friendlyNames);
-    #endif
-  #elif defined _AFX
-    static BOOL UsingSetupAPI2(CUIntArray& ports, CStringArray& friendlyNames);
-  #else
-    static BOOL UsingSetupAPI2(CSimpleArray<UINT>& ports, CSimpleArray<CString>& friendlyNames);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_SETUPAPI2
+  static _Return_type_success_(return != 0) BOOL UsingSetupAPI2(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_SETUPAPI2
 
-#ifndef NO_ENUMSERIAL_USING_ENUMPORTS
-  #if defined CENUMERATESERIAL_USE_STL
-    static BOOL UsingEnumPorts(std::vector<UINT>& ports);
-  #elif defined _AFX
-    static BOOL UsingEnumPorts(CUIntArray& ports);
-  #else
-    static BOOL UsingEnumPorts(CSimpleArray<UINT>& ports);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_ENUMPORTS
+  static _Return_type_success_(return != 0) BOOL UsingEnumPorts(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_ENUMPORTS
 
-#ifndef NO_ENUMSERIAL_USING_WMI
-  #if defined CENUMERATESERIAL_USE_STL
-    #if defined _UNICODE
-      static BOOL UsingWMI(std::vector<UINT>& ports, std::vector<std::wstring>& friendlyNames);
-    #else
-      static BOOL UsingWMI(std::vector<UINT>& ports, std::vector<std::string>& friendlyNames);
-    #endif
-  #elif defined _AFX
-    static BOOL UsingWMI(CUIntArray& ports, CStringArray& friendlyNames);
-  #else
-    static BOOL UsingWMI(CSimpleArray<UINT>& ports, CSimpleArray<CString>& friendlyNames);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_WMI
+  static HRESULT UsingWMI(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_WMI
 
-#ifndef NO_ENUMSERIAL_USING_COMDB
-  #if defined CENUMERATESERIAL_USE_STL
-    static BOOL UsingComDB(std::vector<UINT>& ports);
-  #elif defined _AFX
-    static BOOL UsingComDB(CUIntArray& ports);
-  #else
-    static BOOL UsingComDB(CSimpleArray<UINT>& ports);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_COMDB
+  static _Return_type_success_(return != 0) BOOL UsingComDB(_Inout_ CPortsArray& ports);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_COMDB
 
-#ifndef NO_ENUMSERIAL_USING_REGISTRY
-  #if defined CENUMERATESERIAL_USE_STL
-    #if defined _UNICODE
-      static BOOL UsingRegistry(std::vector<std::wstring>& ports);
-    #else
-      static BOOL UsingRegistry(std::vector<std::string>& ports);
-    #endif
-  #elif defined _AFX
-    static BOOL UsingRegistry(CStringArray& ports);
-  #else
-    static BOOL UsingRegistry(CSimpleArray<CString>& ports);
-  #endif
-#endif
+#ifndef NO_CENUMERATESERIAL_USING_REGISTRY
+  static _Return_type_success_(return != 0) BOOL UsingRegistry(_Inout_ CNamesArray& ports);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_REGISTRY
 
 protected:
-
-//Helper class which supports auto closing of a handle via CloseHandle
-  class CAutoHandle
-  {
-  public:
-  //Constructors / Destructors
-    CAutoHandle() : m_hHandle(INVALID_HANDLE_VALUE)
-    {
-    }
-
-    explicit CAutoHandle(HANDLE hHandle) : m_hHandle(hHandle)
-    {
-    }
-
-    ~CAutoHandle()
-    {
-      if (m_hHandle != INVALID_HANDLE_VALUE)
-      {
-        CloseHandle(m_hHandle);
-        m_hHandle = INVALID_HANDLE_VALUE;
-      }
-    }
-
-  //Methods
-    operator HANDLE() 
-    {
-      return m_hHandle;
-    }
-
-  //Member variables
-    HANDLE m_hHandle;
-  };
-
-
-//Helper class which supports auto closing of a HMODULE via FreeLibrary and setting of the last Win32 error via SetLastError
-  class CAutoHModule
-  {
-  public:
-  //Constructors / Destructors
-    CAutoHModule() : m_hModule(NULL), 
-                     m_dwError(ERROR_SUCCESS)
-    {
-    }
-
-    explicit CAutoHModule(HMODULE hModule) : m_hModule(hModule), 
-                                             m_dwError(GetLastError())
-    {
-    }
-
-    explicit CAutoHModule(HMODULE hModule, DWORD dwError) : m_hModule(hModule), 
-                                                            m_dwError(dwError)
-    {
-    }
-
-    ~CAutoHModule()
-    {
-      if (m_hModule != NULL)
-      {
-        FreeLibrary(m_hModule);
-        m_hModule = NULL;
-      }
-      SetLastError(m_dwError);
-    }
-
-    operator HMODULE() 
-    {
-      return m_hModule;
-    }
-
-  //Member variables
-    HMODULE m_hModule;
-    DWORD m_dwError;
-  };
-
-
-
 //Methods
-  static BOOL RegQueryValueString(HKEY kKey, LPCTSTR lpValueName, LPTSTR& pszValue);
-  static BOOL QueryRegistryPortName(HKEY hDeviceKey, int& nPort);
-  static HMODULE LoadLibraryFromSystem32(LPCTSTR lpFileName);
-  static BOOL IsNumeric(LPCSTR pszString, BOOL bIgnoreColon);
-  static BOOL IsNumeric(LPCWSTR pszString, BOOL bIgnoreColon);
+#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
+  static _Return_type_success_(return != 0) BOOL RegQueryValueString(_In_ ATL::CRegKey& key, _In_ LPCTSTR lpValueName, _Out_ LPTSTR& pszValue);
+  static _Return_type_success_(return != 0) BOOL QueryRegistryPortName(_In_ ATL::CRegKey& deviceKey, _Out_ int& nPort);
+  static _Return_type_success_(return != 0) BOOL QueryUsingSetupAPI(const GUID& guid, _In_ DWORD dwFlags, _Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+  static _Return_type_success_(return != 0) BOOL QueryDeviceDescription(HDEVINFO hDevInfoSet, SP_DEVINFO_DATA& devInfo, ATL::CHeapPtr<BYTE>& byFriendlyName);
+#endif //#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
+  static _Return_type_success_(return != 0) BOOL IsNumeric(_In_ LPCSTR pszString, _In_ BOOL bIgnoreColon);
+  static _Return_type_success_(return != 0) BOOL IsNumeric(_In_ LPCWSTR pszString, _In_ BOOL bIgnoreColon);
 };
 
-#endif //__ENUMSER_H__
+
+#endif //#ifndef __ENUMSER_H__

@@ -50,7 +50,8 @@ public:
 
 	CFreeScanDlg*	m_pMainDlg; // Base Dialog Pointer.
 protected:
-	CUIntArray m_cuPorts; // Stores the enumerated COM Port numbers
+//	CUIntArray m_cuPorts; // Stores the enumerated COM Port numbers
+	CEnumerateSerial::CPortsArray m_cuPorts; // Stores the enumerated COM Port numbers
 	CEnumerateSerial m_EnumSerial;//ARW 15/01/2005 New EnumSerial Class
 	BOOL	m_bCSVFirstTime;
 	BOOL	m_bLogFirstTime;

@@ -51,7 +51,8 @@ BOOL CFreeScanApp::InitInstance()
 
         // must set size of structure
     version.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        // get version data
+        // get version data (NOTE: This is depreciated now)
+		// Project Properties > Configuration Properties > C/C++ > General > SDL checks [set to No]			
     if (!GetVersionEx(&version))
     {
 		CString s;

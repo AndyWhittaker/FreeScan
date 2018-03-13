@@ -401,8 +401,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,1,0,0
- PRODUCTVERSION 3,1,0,0
+ FILEVERSION 3,1,0,1
+ PRODUCTVERSION 3,1,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -417,16 +417,16 @@ BEGIN
     BEGIN
         BLOCK "08090000"
         BEGIN
-            VALUE "Comments", "FreeScan ECU scantool."
+            VALUE "Comments", "FreeScan ECU ALDL scantool."
             VALUE "CompanyName", "Andy Whittaker - mail@andywhittaker.com"
             VALUE "FileDescription", "Scantool for monitoring ECUs/PCMs"
-            VALUE "FileVersion", "3.1.0.0"
+            VALUE "FileVersion", "3.1.0.1"
             VALUE "InternalName", "FreeScan"
             VALUE "LegalCopyright", "Copyright (C) 1999-2018 Andy Whittaker, mail@andywhittaker.com"
             VALUE "LegalTrademarks", "www.andywhittaker.com"
             VALUE "OriginalFilename", "FreeScan.exe"
             VALUE "ProductName", "FreeScan"
-            VALUE "ProductVersion", "3.1.0.0"
+            VALUE "ProductVersion", "3.1.0.1"
         END
     END
     BLOCK "VarFileInfo"
@@ -3966,7 +3966,7 @@ BEGIN
     IDP_OLE_INIT_FAILED     "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
     IDS_ABOUTBOX            "&About FreeScan..."
     IDS_TITLE               "FreeScan - ECU/PCM Scantool"
-    IDS_VERSION             "FreeScan v2.1.0"
+    IDS_VERSION             "FreeScan v3.1.0.1"
 END
 
 STRINGTABLE

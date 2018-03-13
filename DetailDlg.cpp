@@ -281,11 +281,11 @@ BOOL CDetailDlg::OnInitDialog()
 
 	m_ComSelect.ResetContent();
 	// Fill up the COMBOBOX with our serial ports
-	for (int i=0; i<m_cuPorts.GetSize(); i++)
+	for (UINT i=0; i<m_cuPorts.size(); i++)
 	{
 //		CComboBox
 		CString csTemp;
-		csTemp.Format("COM%d", m_cuPorts.ElementAt(i));
+		csTemp.Format("COM%d", m_cuPorts[i]);
 		m_ComSelect.AddString(csTemp);
 	}
 
@@ -300,7 +300,7 @@ void CDetailDlg::Enumerate(void)
 	
 	m_EnumSerial.UsingCreateFile(m_cuPorts);
 
-	int i=m_cuPorts.GetSize();
+	int i=m_cuPorts.size();
 
 	TRACE("Done, %d serial ports found\n", i);
 }
@@ -313,7 +313,7 @@ void CDetailDlg::OnSelendokComselect()
 	csText = "Selected " + csText;
 	WriteStatus(csText);
 	
-	GetSupervisor()->SetCurrentPort(m_cuPorts.ElementAt(m_ComSelect.GetCurSel()));
+	GetSupervisor()->SetCurrentPort(m_cuPorts[m_ComSelect.GetCurSel()]);
 }
 
 void CDetailDlg::OnKillfocusComselect()

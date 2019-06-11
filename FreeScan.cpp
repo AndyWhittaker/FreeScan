@@ -56,7 +56,7 @@ BOOL CFreeScanApp::InitInstance()
     if (!GetVersionEx(&version))
     {
 		CString s;
-        s.Format("Error getting Version Info: %d", GetLastError());
+        s.Format(_T("Error getting Version Info: %d"), GetLastError());
 		AfxMessageBox(s, MB_ICONSTOP | MB_OK);
         return FALSE;
     }
@@ -71,13 +71,13 @@ BOOL CFreeScanApp::InitInstance()
             break;
         case VER_PLATFORM_WIN32s:
                 // Not supported
-            AfxMessageBox("Sorry, Windows 3.1 Win32s is not supported by FreeScan", MB_ICONSTOP | MB_OK);
+            AfxMessageBox(_T("Sorry, Windows 3.1 Win32s is not supported by FreeScan"), MB_ICONSTOP | MB_OK);
 			return FALSE;
             break;
         default:
 			{
 			char szBuffer[100];
-            sprintf_s(szBuffer, "Untested Win32 Version: %d\nFreeScan may not run correctly\nPlease Email fs@andywhittaker.com with this error.", version.dwPlatformId);
+            sprintf_s(szBuffer, _T("Untested Win32 Version: %d\nFreeScan may not run correctly\nPlease Email mail@andywhittaker.com with this error."), version.dwPlatformId);
 			AfxMessageBox(szBuffer, MB_ICONEXCLAMATION | MB_OK);
 			//return FALSE;
 			}
@@ -91,7 +91,7 @@ BOOL CFreeScanApp::InitInstance()
 	//  the specific initialization routines you do not need.
 
 	// Setup the registry for our application
-	SetRegistryKey("arw Software");
+	SetRegistryKey(_T("ECUFix"));
 	LoadStdProfileSettings();  // Load standard INI file options (including MRU)		
 
 	CFreeScanDlg dlg(IDS_TITLE, NULL);

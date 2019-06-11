@@ -401,8 +401,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,1,0,1
- PRODUCTVERSION 3,1,0,1
+ FILEVERSION 3,2,0,1
+ PRODUCTVERSION 3,2,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -420,13 +420,13 @@ BEGIN
             VALUE "Comments", "FreeScan ECU ALDL scantool."
             VALUE "CompanyName", "Andy Whittaker - mail@andywhittaker.com"
             VALUE "FileDescription", "Scantool for monitoring ECUs/PCMs"
-            VALUE "FileVersion", "3.1.0.1"
+            VALUE "FileVersion", "3.2.0.1"
             VALUE "InternalName", "FreeScan"
             VALUE "LegalCopyright", "Copyright (C) 1999-2018 Andy Whittaker, mail@andywhittaker.com"
             VALUE "LegalTrademarks", "www.andywhittaker.com"
             VALUE "OriginalFilename", "FreeScan.exe"
             VALUE "ProductName", "FreeScan"
-            VALUE "ProductVersion", "3.1.0.1"
+            VALUE "ProductVersion", "3.2.0.1"
         END
     END
     BLOCK "VarFileInfo"
@@ -3952,6 +3952,17 @@ BEGIN
 0xffff, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x4059, 
 0x03e8, 0x0000, 0x03e8, 0x0000, 0x0320, 0x0000, 0x0003, 0x0000, 0x4334, 
 0x0000, 0x0000, 0xffff, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DETAIL AFX_DIALOG_LAYOUT
+BEGIN
     0
 END
 

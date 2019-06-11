@@ -42,6 +42,7 @@
 #include <WBemCli.h>
 #include <comdef.h>
 #include <Afxpriv.h>
+#include <strsafe.h> // For the new safe string functions
 
 //For CENUMERATESERIAL
 #include <vector>

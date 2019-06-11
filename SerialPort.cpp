@@ -122,8 +122,8 @@ CSerialPort::CSerialPort()
 
 	// Recall previous settings from the registry, default Com 1 in case 1st time run.
 	CWinApp* pApp = AfxGetApp();
-	m_nPortNr = pApp->GetProfileInt("Communications", "Port", 1);
-	m_nWriteDelay = pApp->GetProfileInt("Communications", "WriteDelay", 100);
+	m_nPortNr = pApp->GetProfileInt(_T("Communications"), _T("Port"), 1);
+	m_nWriteDelay = pApp->GetProfileInt(_T("Communications"), _T("WriteDelay"), 100);
 }
 
 // Delete dynamic memory
@@ -131,8 +131,8 @@ CSerialPort::~CSerialPort()
 {
 	// Save our settings to the registry
 	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("Communications", "Port", m_nPortNr);
-	pApp->WriteProfileInt("Communications", "WriteDelay", m_nWriteDelay);
+	pApp->WriteProfileInt(_T("Communications"), _T("Port"), m_nPortNr);
+	pApp->WriteProfileInt(_T("Communications"), _T("WriteDelay"), m_nWriteDelay);
 
 	// resume the thread if it was suspended. Needed to process m_hShutdownEvent!
 	if(m_Thread != NULL)
@@ -149,7 +149,7 @@ CSerialPort::~CSerialPort()
 	       SetEvent(m_hShutdownEvent);
 	    } 
 		while (m_bThreadAlive);
-	    TRACE("Thread ended\n");
+	    TRACE(_T("Thread ended\n"));
 	}
 
 	// close handles to avoid memory leaks
@@ -193,9 +193,9 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 
 	if (portnr == NULL)
 	{// Use the last port setting.
-		TRACE("CSerialPort::InitPort - Setting COM Port to last value\n");
+		TRACE(_T("CSerialPort::InitPort - Setting COM Port to last value\n"));
 		CWinApp* pApp = AfxGetApp();
-		m_nPortNr = pApp->GetProfileInt("Communications", "Port", 1);
+		m_nPortNr = pApp->GetProfileInt(_T("Communications"), _T("Port"), 1);
 	}
 	else
 		m_nPortNr = portnr;
@@ -218,18 +218,18 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 	ASSERT(pPortOwner != NULL);
 
 	CWinApp* pApp = AfxGetApp();
-	m_nPortNr = pApp->GetProfileInt("Communications", "Port", 1);
-	TRACE("CSerialPort::InitPort - Com Port %d\n", m_nPortNr);
+	m_nPortNr = pApp->GetProfileInt(_T("Communications"), _T("Port"), 1);
+	TRACE(_T("CSerialPort::InitPort - Com Port %d\n"), m_nPortNr);
 
 	if (m_nPortNr < 1)
 	{// This should never happen, however a mistake could have been made in the registry.
-		TRACE("CSerialPort::InitPort - Com Port cannot be 0");
+		TRACE(_T("CSerialPort::InitPort - Com Port cannot be 0"));
 		return FALSE;
 	}
 
 	if (m_nPortNr > 255)
 	{// This should never happen, however a mistake could have been made in the registry.
-		TRACE("CSerialPort::InitPort - Com Port cannot be greater than 255");
+		TRACE(_T("CSerialPort::InitPort - Com Port cannot be greater than 255"));
 		return FALSE;
 	}
 
@@ -240,7 +240,7 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 		{
 			SetEvent(m_hShutdownEvent);
 		} while (m_bThreadAlive);
-		TRACE("Thread ended\n");
+		TRACE(_T("Thread ended\n"));
 	}
 
 	// create events
@@ -288,8 +288,8 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 	}
 
 	// prepare port strings
-	sprintf_s(szPort, 50, "COM%d", m_nPortNr);
-	sprintf_s(szBaud, 50, "baud=%d parity=%c data=%d stop=%d", baud, parity, databits, stopbits);
+	sprintf_s(szPort, 50, _T("COM%d"), m_nPortNr);
+	sprintf_s(szBaud, 50, _T("baud=%d parity=%c data=%d stop=%d"), baud, parity, databits, stopbits);
 
 	// get a handle to the port
 	m_hComm = CreateFile(szPort,						// communication port string (COMX)
@@ -342,19 +342,19 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 					if (SetCommState(m_hComm, &m_dcb))
 						; // normal operation... continue
 					else
-						ProcessErrorMessage("SetCommState()");
+						ProcessErrorMessage(_T("SetCommState()"));
 				}
 				else
-					ProcessErrorMessage("BuildCommDCB()");
+					ProcessErrorMessage(_T("BuildCommDCB()"));
 			}
 			else
-				ProcessErrorMessage("GetCommState()");
+				ProcessErrorMessage(_T("GetCommState()"));
 		}
 		else
-			ProcessErrorMessage("SetCommMask()");
+			ProcessErrorMessage(_T("SetCommMask()"));
 	}
 	else
-		ProcessErrorMessage("SetCommTimeouts()");
+		ProcessErrorMessage(_T("SetCommTimeouts()"));
 
 	delete [] szPort;
 	delete [] szBaud;
@@ -368,7 +368,7 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 	EscapeCommFunction(m_hComm, SETDTR); // This is needed for self-powered interfaces
 	EscapeCommFunction(m_hComm, SETRTS); // This is needed for self-powered interfaces
 
-	TRACE("Initialisation for Com Port %d completed.\n",
+	TRACE(_T("Initialisation for Com Port %d completed.\n"),
 		m_nPortNr);
 
 	return TRUE;
@@ -381,7 +381,7 @@ UINT CSerialPort::CommThread(LPVOID pParam)
 	// a pointer of CSerialPort class
 	CSerialPort *port = (CSerialPort*)pParam;
 	
-	TRACE("Com Port %d thread is starting.\n", port->m_nPortNr);
+	TRACE(_T("Com Port %d thread is starting.\n"), port->m_nPortNr);
 
 	// Set the status variable in the dialog class to
 	// TRUE to indicate the thread is running.
@@ -537,19 +537,19 @@ UINT CSerialPort::CommThread(LPVOID pParam)
 	} // close forever loop
 
 	// when we get here, the thread is about to shutdown and exit.
-	TRACE("Com Port %d thread about to die.\n", port->m_nPortNr);
+	TRACE(_T("Com Port %d thread about to die.\n"), port->m_nPortNr);
 	return 0;
 }
 
 // Start comm watching
 BOOL CSerialPort::StartMonitoring()
 {
-	TRACE("Com Port %d starting monitoring.\n", m_nPortNr);
+	TRACE(_T("Com Port %d starting monitoring.\n"), m_nPortNr);
 	if (!(m_Thread = AfxBeginThread(CommThread, this, THREAD_PRIORITY_NORMAL)))
 		return FALSE;
 	// Clear buffer
 	PurgeComm(m_hComm, PURGE_RXCLEAR | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_TXABORT);
-	TRACE("Thread %ld started\n", (DWORD)m_Thread->m_nThreadID);
+	TRACE(_T("Thread %ld started\n"), (DWORD)m_Thread->m_nThreadID);
 
 	return TRUE;
 }
@@ -557,7 +557,7 @@ BOOL CSerialPort::StartMonitoring()
 // Restart the comm thread
 BOOL CSerialPort::RestartMonitoring()
 {
-	TRACE("Com Port %d re-starting monitoring.\n", m_nPortNr);
+	TRACE(_T("Com Port %d re-starting monitoring.\n"), m_nPortNr);
 	// Clear buffer
 	PurgeComm(m_hComm, PURGE_RXCLEAR | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_TXABORT);
 	if(m_Thread != NULL)
@@ -573,7 +573,7 @@ BOOL CSerialPort::StopMonitoring()
 {
 	if(m_Thread != NULL)
 	{
-		TRACE("Com Port %d stopped monitoring.\n", m_nPortNr);
+		TRACE(_T("Com Port %d stopped monitoring.\n"), m_nPortNr);
 		m_Thread->SuspendThread(); 
 	}
 	// Clear buffer
@@ -599,9 +599,9 @@ void CSerialPort::ProcessErrorMessage(char* ErrorText)
 		NULL 
 	);
 
-	sprintf_s(Temp, 200, "WARNING:  %s Failed with the following error: \n%s\nPort: %d\n", 
+	sprintf_s(Temp, 200, _T("WARNING:  %s Failed with the following error: \n%s\nPort: %d\n"),
 		(char*)ErrorText, (char*)lpMsgBuf, m_nPortNr); 
-	MessageBox(NULL, Temp, "Application Error", MB_ICONSTOP);
+	MessageBox(NULL, Temp, _T("Application Error"), MB_ICONSTOP);
 
 	LocalFree(lpMsgBuf);
 	delete[] Temp;
@@ -649,7 +649,7 @@ void CSerialPort::WriteChar(CSerialPort* port)
 				default:
 					{
 						// all other error codes
-						port->ProcessErrorMessage("WriteFile()");
+						port->ProcessErrorMessage(_T("WriteFile()"));
 						AfxThrowSerialException();
 					}
 			}
@@ -676,7 +676,7 @@ void CSerialPort::WriteChar(CSerialPort* port)
 		// deal with the error code 
 		if (!bResult)  
 		{
-			port->ProcessErrorMessage("GetOverlappedResults() in WriteFile()");
+			port->ProcessErrorMessage(_T("GetOverlappedResults() in WriteFile()"));
 		    AfxThrowSerialException();
 
 			if (GetLastError() != ERROR_IO_PENDING)
@@ -690,7 +690,7 @@ void CSerialPort::WriteChar(CSerialPort* port)
 	// Verify that the data size sent equals what we tried to send
 	if (BytesSent != (DWORD)port->m_nActualWriteBufferSize)
 	{
-		TRACE("WARNING: WriteFile() error.. Bytes Sent: %d; Message Length: %d\n", 
+		TRACE(_T("WARNING: WriteFile() error.. Bytes Sent: %d; Message Length: %d\n"),
 			BytesSent, port->m_nActualWriteBufferSize);
 	}
 }
@@ -789,7 +789,7 @@ void CSerialPort::ReceiveChar(CSerialPort* port, COMSTAT comstat)
 			// deal with the error code 
 			if (!bResult)  
 			{
-				port->ProcessErrorMessage("GetOverlappedResults() in ReadFile()");
+				port->ProcessErrorMessage(_T("GetOverlappedResults() in ReadFile()"));
 			    AfxThrowSerialException();
 			}	
 		}  // close if (!bRead)
@@ -870,8 +870,8 @@ UINT CSerialPort::GetPort(void)
 void CSerialPort::SetPort(UINT nPort)
 {
 	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("Communications", "Port", nPort);
-    TRACE(_T("Comms port number changed\n"));
+	pApp->WriteProfileInt(_T("Communications"), _T("Port"), nPort);
+    TRACE(_T(_T("Comms port number changed\n")));
 }
 
 // Returns the minimum number of milliseconds the TX routine will wait before returning
@@ -886,6 +886,6 @@ void CSerialPort::SetWriteDelay(DWORD nDelay)
 	m_nWriteDelay = nDelay;
 	// Write this to the registry
 	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("Communications", "WriteDelay", m_nWriteDelay);
+	pApp->WriteProfileInt(_T("Communications"), _T("WriteDelay"), m_nWriteDelay);
     TRACE(_T("Comms port write delay changed\n"));
 }

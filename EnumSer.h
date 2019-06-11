@@ -3,7 +3,7 @@ Module : enumser.h
 Purpose: Defines the interface for a class to enumerate the serial ports installed on a PC
          using a number of different approaches
 
-Copyright (c) 1998 - 2017 by PJ Naughter (Web: www.naughter.com, Email: pjna@naughter.com)
+Copyright (c) 1998 - 2019 by PJ Naughter (Web: www.naughter.com, Email: pjna@naughter.com)
 
 All rights reserved.
 
@@ -29,52 +29,43 @@ to maintain a single distribution point for the source code.
 #define CENUMERATESERIAL_EXT_CLASS
 #endif //#ifndef CENUMERATESERIAL_EXT_CLASS
 
-#ifndef _Return_type_success_
-#define _Return_type_success_(expr)
-#endif //#ifndef _Return_type_success_
 
-#ifndef _In_
-#define _In_
-#endif //#ifndef _In_
-
-#ifndef _Out_
-#define _Out_
-#endif //#ifndef _Out_
-
-#ifndef _Inout_
-#define _Inout_
-#endif //#ifndef _Inout_
-
-
-///////////////////////// Includes ////////////////////////////////////////////                      
+///////////////////////// Includes ////////////////////////////////////////////
 
 #ifndef __ATLBASE_H__
 #pragma message("To avoid this message, please put atlbase.h in your pre compiled header (normally stdafx.h)")
 #include <atlbase.h>
 #endif //#ifndef __ATLBASE_H__
 
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-  #ifndef _VECTOR_
-    #pragma message("To avoid this message, please put vector in your pre compiled header (normally stdafx.h)")
-    #include <vector>
-  #endif //#ifndef _VECTOR_
-  #ifndef _STRING_
-    #pragma message("To avoid this message, please put string in your pre compiled header (normally stdafx.h)")
-    #include <string>
-  #endif //#ifndef _STRING_
-#else
-  #ifdef _AFX
-    #ifndef __AFXTEMPL_H__
-      #pragma message("To avoid this message, please put afxtempl.h in your pre compiled header (normally stdafx.h)")
-      #include <afxtempl.h> 
-    #endif //#ifndef __AFXTEMPL_H__
-  #else
-    #ifndef __ATLSTR_H__
-      #pragma message("To avoid this message, please put atlstr.h in your pre compiled header (normally stdafx.h)")
-      #include <atlstr.h>
-    #endif //#ifndef __ATLSTR_H__
-  #endif //#ifdef _AFX
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+#ifndef _VECTOR_
+#pragma message("To avoid this message, please put vector in your pre compiled header (normally stdafx.h)")
+#include <vector>
+#endif //#ifndef _VECTOR_
+
+#ifndef _STRING_
+#pragma message("To avoid this message, please put string in your pre compiled header (normally stdafx.h)")
+#include <string>
+#endif //#ifndef _STRING_
+
+#ifndef _UTILITY_
+#pragma message("To avoid this message, please put utility in your pre compiled header (normally stdafx.h)")
+#include <utility>
+#endif //#ifndef _UTILITY_
+
+#ifndef __ATLSTR_H__
+#pragma message("To avoid this message, please put atlstr.h in your pre compiled header (normally stdafx.h)")
+#include <atlstr.h>
+#endif //#ifndef __ATLSTR_H__
+
+#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
+#include <winioctl.h>
+
+#ifndef _INC_SETUPAPI
+#pragma message("To avoid this message, please put setupapi.h in your pre compiled header (normally stdafx.h)")
+#include <setupapi.h>
+#endif //#ifndef _INC_SETUPAPI
+
+#endif //#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
 
 
 ///////////////////////// Classes /////////////////////////////////////////////
@@ -83,68 +74,66 @@ class CENUMERATESERIAL_EXT_CLASS CEnumerateSerial
 {
 public:
 //Typdefs
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   typedef std::vector<UINT> CPortsArray;
 #ifdef _UNICODE
-  typedef std::vector<std::wstring> CNamesArray;
+  typedef std::wstring String;
 #else
-  typedef std::vector<std::string> CNamesArray;
+  typedef std::string String;
 #endif
-#elif defined _AFX
-  typedef CUIntArray CPortsArray;
-  typedef CStringArray CNamesArray;
-#else
-  typedef CSimpleArray<UINT> CPortsArray;
-  typedef CSimpleArray<ATL::CString> CNamesArray;
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+  typedef std::vector<String> CNamesArray;
+  typedef std::vector<std::pair<UINT, String> > CPortAndNamesArray;
 
 //Methods
 #ifndef NO_CENUMERATESERIAL_USING_CREATEFILE
-  static _Return_type_success_(return != 0) BOOL UsingCreateFile(_Inout_ CPortsArray& ports);
+  static _Return_type_success_(return != false) bool UsingCreateFile(_Inout_ CPortsArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_CREATEFILE
 
 #ifndef NO_CENUMERATESERIAL_USING_QUERYDOSDEVICE
-  static _Return_type_success_(return != 0) BOOL UsingQueryDosDevice(_Inout_ CPortsArray& ports);
+  static _Return_type_success_(return != false) bool UsingQueryDosDevice(_Inout_ CPortsArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_QUERYDOSDEVICE
 
 #ifndef NO_CENUMERATESERIAL_USING_GETDEFAULTCOMMCONFIG
-  static _Return_type_success_(return != 0) BOOL UsingGetDefaultCommConfig(_Inout_ CPortsArray& ports);
+  static _Return_type_success_(return != false) bool UsingGetDefaultCommConfig(_Inout_ CPortsArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_GETDEFAULTCOMMCONFIG
 
 #ifndef NO_CENUMERATESERIAL_USING_SETUPAPI1
-  static _Return_type_success_(return != 0) BOOL UsingSetupAPI1(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+  static _Return_type_success_(return != false) bool UsingSetupAPI1(_Inout_ CPortAndNamesArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_SETUPAPI1
 
 #ifndef NO_CENUMERATESERIAL_USING_SETUPAPI2
-  static _Return_type_success_(return != 0) BOOL UsingSetupAPI2(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+  static _Return_type_success_(return != false) bool UsingSetupAPI2(_Inout_ CPortAndNamesArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_SETUPAPI2
 
 #ifndef NO_CENUMERATESERIAL_USING_ENUMPORTS
-  static _Return_type_success_(return != 0) BOOL UsingEnumPorts(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+  static _Return_type_success_(return != false) bool UsingEnumPorts(_Inout_ CPortAndNamesArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_ENUMPORTS
 
 #ifndef NO_CENUMERATESERIAL_USING_WMI
-  static HRESULT UsingWMI(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
+  static HRESULT UsingWMI(_Inout_ CPortAndNamesArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_WMI
 
 #ifndef NO_CENUMERATESERIAL_USING_COMDB
-  static _Return_type_success_(return != 0) BOOL UsingComDB(_Inout_ CPortsArray& ports);
+  static _Return_type_success_(return != false) bool UsingComDB(_Inout_ CPortsArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_COMDB
 
 #ifndef NO_CENUMERATESERIAL_USING_REGISTRY
-  static _Return_type_success_(return != 0) BOOL UsingRegistry(_Inout_ CNamesArray& ports);
+  static _Return_type_success_(return != false) bool UsingRegistry(_Inout_ CNamesArray& ports);
+#endif //#ifndef NO_CENUMERATESERIAL_USING_REGISTRY
+
+#ifndef NO_CENUMERATESERIAL_USING_GETCOMMPORTS
+  static _Return_type_success_(return != false) bool UsingGetCommPorts(_Inout_ CPortsArray& ports);
 #endif //#ifndef NO_CENUMERATESERIAL_USING_REGISTRY
 
 protected:
 //Methods
 #if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
-  static _Return_type_success_(return != 0) BOOL RegQueryValueString(_In_ ATL::CRegKey& key, _In_ LPCTSTR lpValueName, _Out_ LPTSTR& pszValue);
-  static _Return_type_success_(return != 0) BOOL QueryRegistryPortName(_In_ ATL::CRegKey& deviceKey, _Out_ int& nPort);
-  static _Return_type_success_(return != 0) BOOL QueryUsingSetupAPI(const GUID& guid, _In_ DWORD dwFlags, _Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames);
-  static _Return_type_success_(return != 0) BOOL QueryDeviceDescription(HDEVINFO hDevInfoSet, SP_DEVINFO_DATA& devInfo, ATL::CHeapPtr<BYTE>& byFriendlyName);
+  static _Return_type_success_(return != false) bool RegQueryValueString(_In_ ATL::CRegKey& key, _In_ LPCTSTR lpValueName, _Inout_ String& sValue);
+  static _Return_type_success_(return != false) bool QueryRegistryPortName(_In_ ATL::CRegKey& deviceKey, _Out_ int& nPort);
+  static _Return_type_success_(return != false) bool QueryUsingSetupAPI(const GUID& guid, _In_ DWORD dwFlags, _Inout_ CPortAndNamesArray& ports);
+  static _Return_type_success_(return != false) bool QueryDeviceDescription(_In_ HDEVINFO hDevInfoSet, _In_ SP_DEVINFO_DATA& devInfo, _Inout_ String& sFriendlyName);
 #endif //#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
-  static _Return_type_success_(return != 0) BOOL IsNumeric(_In_ LPCSTR pszString, _In_ BOOL bIgnoreColon);
-  static _Return_type_success_(return != 0) BOOL IsNumeric(_In_ LPCWSTR pszString, _In_ BOOL bIgnoreColon);
+  static _Return_type_success_(return != false) bool IsNumeric(_In_z_ LPCSTR pszString, _In_ bool bIgnoreColon) noexcept;
+  static _Return_type_success_(return != false) bool IsNumeric(_In_z_ LPCWSTR pszString, _In_ bool bIgnoreColon) noexcept;
 };
 
 

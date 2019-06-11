@@ -29,8 +29,8 @@ CStatusDlg::CStatusDlg(CWnd* pParent /*=NULL*/)
 	//}}AFX_DATA_INIT
 	//Load hide status
 	CWinApp* pApp = AfxGetApp();
-	m_hidden = pApp->GetProfileInt("StatusDlg", "Hide Status", FALSE);
-	m_csLogFile = pApp->GetProfileString("StatusDlg", "Log Filename", "");
+	m_hidden = pApp->GetProfileInt(_T("StatusDlg"), _T("Hide Status"), FALSE);
+	m_csLogFile = pApp->GetProfileString(_T("StatusDlg"), _T("Log Filename"), _T(""));
 
 	m_WindowPos.left = 0;
 	m_WindowPos.right = 0;
@@ -48,8 +48,8 @@ CStatusDlg::~CStatusDlg()
 
 	//Save hide status
 	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("StatusDlg", "Hide Status", m_hidden);
-	pApp->WriteProfileString("StatusDlg", "Log Filename", m_csLogFile);
+	pApp->WriteProfileInt(_T("StatusDlg"), _T("Hide Status"), m_hidden);
+	pApp->WriteProfileString(_T("StatusDlg"), _T("Log Filename"), m_csLogFile);
 
 	StartLog(FALSE);// close the logging file when we exit.
 }
@@ -80,7 +80,7 @@ void CStatusDlg::WriteStatus(CString csText)
 	if (m_hidden) // don't write to window when hidden
 		return;
 
-//	TRACE("%s\n", csText);
+//	TRACE_T(("%s\n"), csText);
 	if (IsWindow(m_hWnd))
 	{
 		PumpMessages();
@@ -95,7 +95,7 @@ void CStatusDlg::WriteStatus(CString csText)
 
 	if (m_file.m_pStream != NULL) // i.e. we have a file open
 	{
-		csText = csText + "\n"; // Line Feed while we log to disk
+		csText = csText + _T("\n"); // Line Feed while we log to disk
 		m_file.WriteString(csText);
 	}
 	if (IsWindow(m_hWnd))
@@ -181,11 +181,11 @@ BOOL CStatusDlg::StartLog(BOOL bStart)
 	{ // we want to close the logging file
 		if (m_file.m_hFile != CFile::hFileNull)
 		{
-			WriteStatusLogged("Log file stopped");
+			WriteStatusLogged(_T("Log file stopped"));
 			m_file.Close(); // close the logging file when we exit.
 		}
 		else
-			WriteStatusLogged("Log file is already closed");
+			WriteStatusLogged(_T("Log file is already closed"));
 		
 		return FALSE;
 	}
@@ -203,12 +203,13 @@ BOOL CStatusDlg::StartLog(BOOL bStart)
 	ofn.nMaxFile = _countof(szFileName);
 	ofn.lpstrFileTitle = (LPTSTR)szFileTitle;
 	ofn.nMaxFileTitle = _countof(szFileTitle);
-	ofn.lpstrTitle = "Create/Open Logging File";
-	ofn.lpstrFilter = "log Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0\0\0";
-	ofn.lpstrInitialDir = m_csLogFile;
+	ofn.lpstrTitle = _T("Create/Open Logging File");
+	ofn.lpstrFilter = _T("log Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0\0\0");
+	ofn.lpstrInitialDir = m_csLogFile.GetString();
 
 	// setup initial file name from the registry
-	lstrcpyn(szFileName, m_csLogFile, _countof(szFileName));
+	//lstrcpyn(szFileName, m_csLogFile, _countof(szFileName));//unsafe
+	StringCchCopy(szFileName, _countof(szFileName), m_csLogFile.GetString());
 
 	ofn.Flags = OFN_HIDEREADONLY | OFN_LONGNAMES | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
 
@@ -220,26 +221,26 @@ BOOL CStatusDlg::StartLog(BOOL bStart)
 		switch (dwerror)
 		{
 		case 0 : // no error
-			csBuf.Format("User cancelled/closed file Dialog");
+			csBuf.Format(_T("User cancelled/closed file Dialog"));
 			break; // cancel or closed was pressed
 		case FNERR_BUFFERTOOSMALL :
-			csBuf.Format("Buffer too small");
+			csBuf.Format(_T("Buffer too small"));
 			AfxMessageBox(csBuf, MB_OK | MB_ICONSTOP );
 			break;
 		case FNERR_INVALIDFILENAME :
-			csBuf.Format("Invalid file name");
+			csBuf.Format(_T("Invalid file name"));
 			AfxMessageBox(csBuf, MB_OK | MB_ICONSTOP );
 			break;
 		case CDERR_MEMALLOCFAILURE :
-			csBuf.Format("Memory allocation failure");
+			csBuf.Format(_T("Memory allocation failure"));
 			AfxMessageBox(csBuf, MB_OK | MB_ICONSTOP );
 			break;
 		case CDERR_MEMLOCKFAILURE :
-			csBuf.Format("Memory lock failure");
+			csBuf.Format(_T("Memory lock failure"));
 			AfxMessageBox(csBuf, MB_OK | MB_ICONSTOP );
 			break;
 		default:
-			csBuf.Format("An unknown error has occured - %ld", dwerror);
+			csBuf.Format(_T("An unknown error has occured - %ld"), dwerror);
 			AfxMessageBox(csBuf, MB_OK | MB_ICONSTOP );
 		}
 		WriteStatus(csBuf);
@@ -247,17 +248,17 @@ BOOL CStatusDlg::StartLog(BOOL bStart)
 	}
 
 	// Copy filename from our dialog to the CString member variable
-	m_csLogFile.Format("%s",ofn.lpstrFile);
+	m_csLogFile.Format(_T("%s"),ofn.lpstrFile);
 
 	if (!m_file.Open(m_csLogFile, CFile::modeCreate | CFile::modeReadWrite | CFile::typeText))
 	{
-		csBuf.Format("Cannot open %s", m_csLogFile);
+		csBuf.Format(_T("Cannot open %s"), m_csLogFile.GetString());
 		WriteStatus(csBuf);
 		AfxMessageBox(csBuf, MB_OK | MB_ICONSTOP );
 		return FALSE;
 	}
 
-	WriteStatusLogged("Log file has started");
+	WriteStatusLogged(_T("Log file has started"));
 
 /*
 	// Construct our File Dialog
@@ -338,7 +339,7 @@ void CStatusDlg::PumpMessages(void)
 void CStatusDlg::PrintRect(LPRECT lpR)
 {
 	CString		csData;
-	csData.Format("Rect Data:\nleft = %li\ntop = %li\nright = %li\nbottom = %li", 
+	csData.Format(_T("Rect Data:\nleft = %li\ntop = %li\nright = %li\nbottom = %li"),
 		lpR->left, lpR->top, lpR->right, lpR->bottom);
 	AfxMessageBox(csData, MB_OK | MB_ICONINFORMATION);
 }
@@ -350,8 +351,8 @@ BOOL CStatusDlg::OnInitDialog()
 {
 	//Retrieve the Window Position from the registry
 	CWinApp* pApp = AfxGetApp();
-	m_WindowPos.left   = pApp->GetProfileInt("StatusDlg", "left pos", 0);
-	m_WindowPos.top    = pApp->GetProfileInt("StatusDlg", "top pos", 0);
+	m_WindowPos.left   = pApp->GetProfileInt(_T("StatusDlg"), _T("left pos"), 0);
+	m_WindowPos.top    = pApp->GetProfileInt(_T("StatusDlg"), _T("top pos"), 0);
 
 	// Set the window position
 	SetWindowPos( &wndBottom, m_WindowPos.left, m_WindowPos.top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
@@ -396,8 +397,8 @@ void CStatusDlg::OnDestroy()
 {
 	//Save the current window position
 	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("StatusDlg", "left pos", m_WindowPos.left);
-	pApp->WriteProfileInt("StatusDlg", "top pos", m_WindowPos.top);
+	pApp->WriteProfileInt(_T("StatusDlg"), _T("left pos"), m_WindowPos.left);
+	pApp->WriteProfileInt(_T("StatusDlg"), _T("top pos"), m_WindowPos.top);
 
 	CDialog::OnDestroy();
 }

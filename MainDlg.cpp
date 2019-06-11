@@ -282,7 +282,7 @@ BOOL CFreeScanDlg::OnInitDialog()
 	m_pStatusDlg->Create(NULL);
 	buf = buf + " by Andy Whittaker";
 	WriteStatus(buf);
-	WriteStatus("Starting Up..");
+	WriteStatus(_T("Starting Up.."));
 
 	// Initialise the communications supervisor
 	m_pSupervisor = new CSupervisor(this, m_pStatusDlg);
@@ -300,7 +300,7 @@ BOOL CFreeScanDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 	
-	WriteStatus("Ready..");
+	WriteStatus(_T("Ready.."));
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }

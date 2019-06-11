@@ -44,8 +44,8 @@ CSupervisor::CSupervisor(CFreeScanDlg* pMainDlg, CStatusDlg* pStatusDlg)
 	
 	// Recall previous settings from the registry.
 	CFreeScanApp* pApp = (CFreeScanApp*) AfxGetApp();
-	m_bCentigrade = pApp->GetProfileInt("Supervisor", "Centigrade", TRUE);
-	m_bMiles = pApp->GetProfileInt("Supervisor", "Miles", TRUE);
+	m_bCentigrade = pApp->GetProfileInt(_T("Supervisor"), _T("Centigrade"), TRUE);
+	m_bMiles = pApp->GetProfileInt(_T("Supervisor"), _T("Miles"), TRUE);
 
 	m_dwBytesSent = 0;
 	m_dwBytesReceived = 0;
@@ -82,8 +82,8 @@ CSupervisor::~CSupervisor()
 {
 	// Save our settings to the registry
 	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("Supervisor", "Centigrade", m_bCentigrade);
-	pApp->WriteProfileInt("Supervisor", "Miles", m_bMiles);
+	pApp->WriteProfileInt(_T("Supervisor"), _T("Centigrade"), m_bCentigrade);
+	pApp->WriteProfileInt(_T("Supervisor"), _T("Miles"), m_bMiles);
 
 	delete m_ucF005;
 	delete m_ucF00A;
@@ -439,9 +439,9 @@ BOOL CSupervisor::Start(void)
 	ASSERT(m_pCom != NULL);
 	// This sets the com port up
 	if (!m_pCom->StartMonitoring())
-		WriteStatus("CSupervisor- Failed to start the Com Port");
+		WriteStatus(_T("CSupervisor- Failed to start the Com Port"));
 	else
-		WriteStatus("CSupervisor- Com Port started");
+		WriteStatus(_T("CSupervisor- Com Port started"));
 	return TRUE;
 }
 
@@ -452,11 +452,11 @@ BOOL CSupervisor::Restart(void)
 	// This sets the com port up
 	if (!m_pCom->RestartMonitoring())
 	{
-		WriteStatus("CSupervisor- Failed to restart the Com Port");
+		WriteStatus(_T("CSupervisor- Failed to restart the Com Port"));
 		return FALSE;
 	}
 	else
-		WriteStatus("CSupervisor- Com Port restarted");
+		WriteStatus(_T("CSupervisor- Com Port restarted"));
 		::SendMessage(m_ProtocolWnd, WM_PROT_CMD_RESETSTATE, (WPARAM) NULL, (LPARAM) NULL);
 	return TRUE;
 }
@@ -470,11 +470,11 @@ BOOL CSupervisor::Stop(void)
 	// This sets the com port up
 	if (!m_pCom->StopMonitoring())
 	{
-		WriteStatus("CSupervisor- Failed to stop the Com Port");
+		WriteStatus(_T("CSupervisor- Failed to stop the Com Port"));
 		return FALSE;
 	}
 	else
-		WriteStatus("CSupervisor- Com Port stopped");
+		WriteStatus(_T("CSupervisor- Com Port stopped"));
 	return TRUE;
 }
 

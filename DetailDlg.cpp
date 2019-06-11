@@ -92,13 +92,13 @@ BEGIN_MESSAGE_MAP(CDetailDlg, CTTPropertyPage)
 	ON_BN_CLICKED(IDC_STOP, OnStop)
 	ON_BN_CLICKED(IDC_HIDE, OnHide)
 	ON_CBN_SELENDOK(IDC_COMSELECT, OnSelendokComselect)
+	ON_CBN_KILLFOCUS(IDC_COMSELECT, OnKillfocusComselect)
 	ON_BN_CLICKED(IDC_LISTEN, OnListen)
 	ON_BN_CLICKED(IDC_INTERACT, OnInteract)
 	ON_BN_CLICKED(IDC_CSV, OnCsv)
 	ON_BN_CLICKED(IDC_CSVOPTIONS, OnCsvoptions)
 	ON_CBN_SELENDOK(IDC_MODEL, OnSelendokModel)
 	ON_BN_CLICKED(IDC_FORCE, OnForce)
-	ON_CBN_KILLFOCUS(IDC_COMSELECT, OnKillfocusComselect)
 	ON_BN_CLICKED(IDC_DEGC, OnDegC)
 	ON_BN_CLICKED(IDC_DEGF, OnDegF)
 	ON_BN_CLICKED(IDC_KPH, OnKph)
@@ -219,12 +219,12 @@ void CDetailDlg::OnStartlog()
 		if (!(m_pMainDlg->StartLog(TRUE)))
 			m_bLogFirstTime = TRUE;// Call may have failed
 		else
-			m_StartLog.SetWindowText("Stop Logging");
+			m_StartLog.SetWindowText(_T("Stop Logging"));
 	}
 	else
 	{
 		m_bLogFirstTime = TRUE;
-		m_StartLog.SetWindowText("Log ECU Coms to Disk");
+		m_StartLog.SetWindowText(_T("Log ECU Coms to Disk"));
 		m_pMainDlg->StartLog(FALSE);
 	}
 }
@@ -237,7 +237,7 @@ void CDetailDlg::OnStart()
 
 	m_pMainDlg->StartComs();
 	m_Stop.EnableWindow(TRUE); // enable the stop monitoring button
-	m_Start.SetWindowText("Restart"); // Start monitoring button's text
+	m_Start.SetWindowText(_T("Restart")); // Start monitoring button's text
 	m_Start.EnableWindow(FALSE); // disable the start monitoring button
 	m_ComSelect.EnableWindow(FALSE); // Disable COM Port changes
 }
@@ -296,13 +296,13 @@ BOOL CDetailDlg::OnInitDialog()
 // Enumerate the serial ports available on this computer
 void CDetailDlg::Enumerate(void)
 {
-	TRACE("Enumerating serial ports in Machine. ");
+	TRACE(_T("Enumerating serial ports in this Machine. "));
 	
 	m_EnumSerial.UsingCreateFile(m_cuPorts);
 
 	int i=m_cuPorts.size();
 
-	TRACE("Done, %d serial ports found\n", i);
+	TRACE(_T("Done, %d serial ports found\n"), i);
 }
 
 // When the "Com Port Select" combobox is closed, handle the new com port.

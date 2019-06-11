@@ -1,7 +1,7 @@
 /*
 Module : enumser.cpp
 Purpose: Implementation for a class to enumerate the serial ports installed on a PC using a number
-         of different approaches. 
+         of different approaches.
 Created: PJN / 03-10-1998
 History: PJN / 23-02-1999 Code now uses QueryDosDevice if running on NT to determine 
                           which serial ports are available. This avoids having to open 
@@ -187,8 +187,21 @@ History: PJN / 23-02-1999 Code now uses QueryDosDevice if running on NT to deter
                           4. Removed the CENUMERATESERIAL_USE_STL define and instead introduced a new 
                           CENUMERATESERIAL_MFC_EXTENSIONS define which by default is not defined.
          PJN / 15-11-2017 1. Updated the code to compile cleanly when _ATL_NO_AUTOMATIC_NAMESPACE is defined.
+         PJN / 19-05-2018 1. Updated copyright details.
+                          2. Addition of a tenth and hopefully final method to enumerate serial ports. The
+                          function is called "UsingGetCommPorts" and enumerates the ports by calling the Win32 
+                          GetCommPorts API which is available on Windows 10 1803 or later.
+         PJN / 08-07-2018 1. Updated copyright details.
+                          2. Fixed a number of C++ core guidelines compiler warnings. These changes mean that
+                          the code will now only compile on VC 2017 or later.
+                          3. Remove the code path which supported CENUMERATESERIAL_MFC_EXTENSIONS
+         PJN / 16-09-2018 1. Fixed a number of compiler warnings when using VS 2017 15.8.4
+         PJN / 15-01-2019 1. Updated copyright details.
+                          2. Updated the sample app to log the time each method call takes
+                          3. Fixed a compilation error "unknown identifier 'HDEVINFO'" in enumser.h. Thanks to Drew Freer for
+                          reporting this issue.
 
-Copyright (c) 1998 - 2017 by PJ Naughter (Web: www.naughter.com, Email: pjna@naughter.com)
+Copyright (c) 1998 - 2019 by PJ Naughter (Web: www.naughter.com, Email: pjna@naughter.com)
 
 All rights reserved.
 
@@ -212,13 +225,6 @@ to maintain a single distribution point for the source code.
 /////////////////////////////// Macros / Defines //////////////////////////////
 
 #if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
-  #include <winioctl.h>
-
-  #ifndef _INC_SETUPAPI
-    #pragma message("To avoid this message, please put setupapi.h in your pre compiled header (normally stdafx.h)")
-    #include <setupapi.h>
-  #endif //#ifndef _INC_SETUPAPI
-
   #pragma comment(lib, "setupapi.lib")
 #endif //#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
 
@@ -258,23 +264,14 @@ to maintain a single distribution point for the source code.
   #pragma comment(lib, "msports.lib")
 #endif //#ifndef NO_CENUMERATESERIAL_USING_COMDB
 
-__if_not_exists(LSTATUS)
-{
-  typedef _Return_type_success_(return == ERROR_SUCCESS) LONG LSTATUS;
-}
-
 
 ///////////////////////////// Implementation //////////////////////////////////
 
 #ifndef NO_CENUMERATESERIAL_USING_CREATEFILE
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingCreateFile(_Inout_ CPortsArray& ports)
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingCreateFile(_Inout_ CPortsArray& ports)
 {
   //Make sure we clear out any elements which may already be in the array
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   ports.clear();
-#else
-  ports.RemoveAll();
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
 
   //Up to 255 COM ports are supported so we iterate through all of them seeing
   //if we can open them or if we fail to open them, get an access denied or general error error.
@@ -282,147 +279,131 @@ _Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingCreateFile(_Inout
   for (UINT i=1; i<256; i++)
   {
     //Form the Raw device name
-    TCHAR szPort[32];
-    szPort[0] = _T('\0');
-    _stprintf_s(szPort, _T("\\\\.\\COM%u"), i);
+    ATL::CAtlString sPort;
+    sPort.Format(_T("\\\\.\\COM%u"), i);
 
     //Try to open the port
-    BOOL bSuccess = FALSE;
-    ATL::CHandle port(CreateFile(szPort, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, 0));
+    bool bSuccess = false;
+    ATL::CHandle port(CreateFile(sPort, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr));
     if (port == INVALID_HANDLE_VALUE)
     {
-      DWORD dwError = GetLastError();
+      const DWORD dwError = GetLastError();
 
       //Check to see if the error was because some other app had the port open or a general failure
-      if (dwError == ERROR_ACCESS_DENIED || dwError == ERROR_GEN_FAILURE || dwError == ERROR_SHARING_VIOLATION || dwError == ERROR_SEM_TIMEOUT)
-        bSuccess = TRUE;
+      if ((dwError == ERROR_ACCESS_DENIED) || (dwError == ERROR_GEN_FAILURE) || (dwError == ERROR_SHARING_VIOLATION) || (dwError == ERROR_SEM_TIMEOUT))
+        bSuccess = true;
     }
     else
     {
       //The port was opened successfully
-      bSuccess = TRUE;
+      bSuccess = true;
     }
 
     //Add the port number to the array which will be returned
     if (bSuccess)
-    {
-    #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+#pragma warning(suppress: 26489)
       ports.push_back(i);
-    #else
-      ports.Add(i);
-    #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-    }
   }
 
   //Return the success indicator
-  return TRUE;
+  return true;
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_CREATEFILE
 
 #if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::RegQueryValueString(_In_ ATL::CRegKey& key, _In_ LPCTSTR lpValueName, _Out_ LPTSTR& pszValue)
+#pragma warning(suppress: 26429)
+_Return_type_success_(return != false) bool CEnumerateSerial::RegQueryValueString(_In_ ATL::CRegKey& key, _In_ LPCTSTR lpValueName, _Inout_ String& sValue)
 {
   //Initialize the output parameter
-  pszValue = nullptr;
+  sValue.clear();
 
-  //First query for the size of the registry value 
+  //First query for the size of the registry value
   ULONG nChars = 0;
   LSTATUS nStatus = key.QueryStringValue(lpValueName, nullptr, &nChars);
   if (nStatus != ERROR_SUCCESS)
   {
     SetLastError(nStatus);
-    return FALSE;
+    return false;
   }
 
   //Allocate enough bytes for the return value
-  DWORD dwAllocatedSize = ((nChars + 1)*sizeof(TCHAR)); //+1 is to allow us to null terminate the data if required
-  pszValue = reinterpret_cast<LPTSTR>(LocalAlloc(LMEM_FIXED, dwAllocatedSize)); 
-  if (pszValue == nullptr)
-    return FALSE;
+#pragma warning(suppress: 26472 26489)
+  sValue.resize(static_cast<size_t>(nChars) + 1); //+1 is to allow us to null terminate the data if required
+  const DWORD dwAllocatedSize = ((nChars + 1)*sizeof(TCHAR));
 
   //We will use RegQueryValueEx directly here because ATL::CRegKey::QueryStringValue does not handle non-null terminated data
   DWORD dwType = 0;
   ULONG nBytes = dwAllocatedSize;
-  pszValue[0] = _T('\0');
-  nStatus = RegQueryValueEx(key, lpValueName, nullptr, &dwType, reinterpret_cast<LPBYTE>(pszValue), &nBytes);
+#pragma warning(suppress: 26446 26489 26490)
+  nStatus = RegQueryValueEx(key, lpValueName, nullptr, &dwType, reinterpret_cast<LPBYTE>(&(sValue[0])), &nBytes);
   if (nStatus != ERROR_SUCCESS)
   {
-    LocalFree(pszValue);
-    pszValue = nullptr;
     SetLastError(nStatus);
-    return FALSE;
+    return false;
   }
   if ((dwType != REG_SZ) && (dwType != REG_EXPAND_SZ))
   {
-    LocalFree(pszValue);
-    pszValue = nullptr;
     SetLastError(ERROR_INVALID_DATA);
-    return FALSE;
+    return false;
   }
   if ((nBytes % sizeof(TCHAR)) != 0)
   {
-    LocalFree(pszValue);
-    pszValue = nullptr;
     SetLastError(ERROR_INVALID_DATA);
-    return FALSE;
+    return false;
   }
-  if (pszValue[(nBytes / sizeof(TCHAR)) - 1] != _T('\0'))
+#pragma warning(suppress: 26446 26489)
+  if (sValue[(nBytes / sizeof(TCHAR)) - 1] != _T('\0'))
   {
     //Forcibly null terminate the data ourselves
-    pszValue[(nBytes / sizeof(TCHAR))] = _T('\0');
+#pragma warning(suppress: 26446 26489)
+    sValue[(nBytes / sizeof(TCHAR))] = _T('\0');
   }
 
-  return TRUE;
+  return true;
 }
 
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::QueryRegistryPortName(_In_ ATL::CRegKey& deviceKey, _Out_ int& nPort)
+_Return_type_success_(return != false) bool CEnumerateSerial::QueryRegistryPortName(_In_ ATL::CRegKey& deviceKey, _Out_ int& nPort)
 {
   //What will be the return value from the method (assume the worst)
-  BOOL bAdded = FALSE;
+  bool bAdded = false;
 
   //Read in the name of the port
-  LPTSTR pszPortName = nullptr;
-  if (RegQueryValueString(deviceKey, _T("PortName"), pszPortName))
+  String sPortName;
+  if (RegQueryValueString(deviceKey, _T("PortName"), sPortName))
   {
     //If it looks like "COMX" then
     //add it to the array which will be returned
-    size_t nLen = _tcslen(pszPortName);
+    const size_t nLen = sPortName.length();
     if (nLen > 3)
     {
-      if ((_tcsnicmp(pszPortName, _T("COM"), 3) == 0) && IsNumeric((pszPortName + 3), FALSE))
+#pragma warning(suppress: 26481)
+      if ((_tcsnicmp(sPortName.c_str(), _T("COM"), 3) == 0) && IsNumeric((sPortName.c_str() + 3), false))
       {
         //Work out the port number
-        nPort = _ttoi(pszPortName + 3);
-
-        bAdded = TRUE;
+#pragma warning(suppress: 26481)
+        nPort = _ttoi(sPortName.c_str() + 3);
+        bAdded = true;
       }
     }
-    LocalFree(pszPortName);
   }
 
   return bAdded;
 }
 
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::QueryUsingSetupAPI(const GUID& guid, _In_ DWORD dwFlags, _Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames)
+_Return_type_success_(return != false) bool CEnumerateSerial::QueryUsingSetupAPI(const GUID& guid, _In_ DWORD dwFlags, _Inout_ CPortAndNamesArray& ports)
 {
   //Set our output parameters to sane defaults
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   ports.clear();
-  friendlyNames.clear();
-#else
-  ports.RemoveAll();
-  friendlyNames.RemoveAll();
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
 
   //Create a "device information set" for the specified GUID
   HDEVINFO hDevInfoSet = SetupDiGetClassDevs(&guid, nullptr, nullptr, dwFlags);
   if (hDevInfoSet == INVALID_HANDLE_VALUE)
-    return FALSE;
+    return false;
 
   //Finally do the enumeration
-  BOOL bMoreItems = TRUE;
+  bool bMoreItems = true;
   int nIndex = 0;
-  SP_DEVINFO_DATA devInfo;
+  SP_DEVINFO_DATA devInfo = { 0 };
   while (bMoreItems)
   {
     //Enumerate the current device
@@ -431,7 +412,9 @@ _Return_type_success_(return != 0) BOOL CEnumerateSerial::QueryUsingSetupAPI(con
     if (bMoreItems)
     {
       //Did we find a serial port for this device
-      BOOL bAdded = FALSE;
+      bool bAdded = false;
+
+      std::pair<UINT, String> pair;
 
       //Get the registry key which stores the ports settings
       ATL::CRegKey deviceKey;
@@ -439,37 +422,21 @@ _Return_type_success_(return != 0) BOOL CEnumerateSerial::QueryUsingSetupAPI(con
       if (deviceKey != INVALID_HANDLE_VALUE)
       {
         int nPort = 0;
+#pragma warning(suppress: 26486)
         if (QueryRegistryPortName(deviceKey, nPort))
         {
-        #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-          ports.push_back(nPort);
-        #else
-          ports.Add(nPort);
-        #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-          bAdded = TRUE;
+          pair.first = nPort;
+          bAdded = true;
         }
       }
 
       //If the port was a serial port, then also try to get its friendly name
       if (bAdded)
       {
-        ATL::CHeapPtr<BYTE> byFriendlyName;
-        if (QueryDeviceDescription(hDevInfoSet, devInfo, byFriendlyName))
-        {
-        #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-          friendlyNames.push_back(reinterpret_cast<LPCTSTR>(byFriendlyName.m_pData));
-        #else
-          friendlyNames.Add(reinterpret_cast<LPCTSTR>(byFriendlyName.m_pData));
-        #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-        }
-        else
-        {
-        #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-          friendlyNames.push_back(_T(""));
-        #else
-          friendlyNames.Add(_T(""));
-        #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-        }
+#pragma warning(suppress: 26489)
+        if (QueryDeviceDescription(hDevInfoSet, devInfo, pair.second))
+#pragma warning(suppress: 26489)
+          ports.push_back(pair);
       }
     }
 
@@ -480,10 +447,10 @@ _Return_type_success_(return != 0) BOOL CEnumerateSerial::QueryUsingSetupAPI(con
   SetupDiDestroyDeviceInfoList(hDevInfoSet);
 
   //Return the success indicator
-  return TRUE;
+  return true;
 }
 
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::QueryDeviceDescription(HDEVINFO hDevInfoSet, SP_DEVINFO_DATA& devInfo, ATL::CHeapPtr<BYTE>& byFriendlyName)
+_Return_type_success_(return != false) bool CEnumerateSerial::QueryDeviceDescription(_In_ HDEVINFO hDevInfoSet, _In_ SP_DEVINFO_DATA& devInfo, _Inout_ String& sFriendlyName)
 {
   DWORD dwType = 0;
   DWORD dwSize = 0;
@@ -491,119 +458,121 @@ _Return_type_success_(return != 0) BOOL CEnumerateSerial::QueryDeviceDescription
   if (!SetupDiGetDeviceRegistryProperty(hDevInfoSet, &devInfo, SPDRP_DEVICEDESC, &dwType, nullptr, 0, &dwSize))
   {
     if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-      return FALSE;
+      return false;
   }
-
-  #pragma warning(suppress: 6102)
-  if (!byFriendlyName.Allocate(dwSize))
+  sFriendlyName.resize(dwSize / sizeof(TCHAR));
+#pragma warning(suppress: 26446 26490)
+  if (!SetupDiGetDeviceRegistryProperty(hDevInfoSet, &devInfo, SPDRP_DEVICEDESC, &dwType, reinterpret_cast<PBYTE>(&(sFriendlyName[0])), dwSize, &dwSize))
+    return false;
+  if (dwType != REG_SZ)
   {
-    SetLastError(ERROR_OUTOFMEMORY);
-    return FALSE;
+    SetLastError(ERROR_INVALID_DATA);
+    return false;
   }
-
-  return SetupDiGetDeviceRegistryProperty(hDevInfoSet, &devInfo, SPDRP_DEVICEDESC, &dwType, byFriendlyName.m_pData, dwSize, &dwSize) && (dwType == REG_SZ);
+  return true;
 }
 #endif //#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
 
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::IsNumeric(_In_ LPCSTR pszString, _In_ BOOL bIgnoreColon)
+#pragma warning(suppress: 26429)
+_Return_type_success_(return != false) bool CEnumerateSerial::IsNumeric(_In_z_ LPCSTR pszString, _In_ bool bIgnoreColon) noexcept
 {
-  size_t nLen = strlen(pszString);
+  const size_t nLen = strlen(pszString);
   if (nLen == 0)
-    return FALSE;
+    return false;
 
   //What will be the return value from this function (assume the best)
-  BOOL bNumeric = TRUE;
+  bool bNumeric = true;
 
   for (size_t i=0; i<nLen && bNumeric; i++)
   {
-    bNumeric = (isdigit(static_cast<int>(pszString[i])) != 0);
+#pragma warning(suppress: 26481)
     if (bIgnoreColon && (pszString[i] == ':'))
-      bNumeric = TRUE;
+      bNumeric = true;
+    else
+#pragma warning(suppress: 26472 26481)
+      bNumeric = (isdigit(static_cast<int>(pszString[i])) != 0);
   }
 
   return bNumeric;
 }
 
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::IsNumeric(_In_ LPCWSTR pszString, _In_ BOOL bIgnoreColon)
+#pragma warning(suppress: 26429)
+_Return_type_success_(return != false) bool CEnumerateSerial::IsNumeric(_In_z_ LPCWSTR pszString, _In_ bool bIgnoreColon) noexcept
 {
-  size_t nLen = wcslen(pszString);
+  const size_t nLen = wcslen(pszString);
   if (nLen == 0)
-    return FALSE;
+    return false;
 
   //What will be the return value from this function (assume the best)
-  BOOL bNumeric = TRUE;
+  bool bNumeric = true;
 
   for (size_t i=0; i<nLen && bNumeric; i++)
   {
-    bNumeric = (iswdigit(pszString[i]) != 0);
+#pragma warning(suppress: 26481)
     if (bIgnoreColon && (pszString[i] == L':'))
-      bNumeric = TRUE;
+      bNumeric = true;
+    else
+#pragma warning(suppress: 26481)
+       bNumeric = (iswdigit(pszString[i]) != 0);
   }
 
   return bNumeric;
 }
 
 #ifndef NO_CENUMERATESERIAL_USING_QUERYDOSDEVICE
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingQueryDosDevice(_Inout_ CPortsArray& ports)
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingQueryDosDevice(_Inout_ CPortsArray& ports)
 {
   //Make sure we clear out any elements which may already be in the array
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   ports.clear();
-#else
-  ports.RemoveAll();
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
 
   //Use QueryDosDevice to look for all devices of the form COMx. Since QueryDosDevice does
-  //not consitently report the required size of buffer, lets start with a reasonable buffer size
+  //not consistently report the required size of buffer, lets start with a reasonable buffer size
   //of 4096 characters and go from there
   int nChars = 4096;
-  BOOL bWantStop = FALSE;
+  bool bWantStop = false;
   while (nChars && !bWantStop)
   {
-    ATL::CHeapPtr<TCHAR> devices;
-    if (!devices.Allocate(nChars))
-    {
-      SetLastError(ERROR_OUTOFMEMORY);
-      return FALSE;
-    }
+    std::vector<TCHAR> devices;
+    devices.resize(nChars);
 
-    DWORD dwChars = QueryDosDevice(nullptr, devices.m_pData, nChars);
+#pragma warning(suppress: 26446)
+    const DWORD dwChars = QueryDosDevice(nullptr, &(devices[0]), nChars);
     if (dwChars == 0)
     {
-      DWORD dwError = GetLastError();
+      const DWORD dwError = GetLastError();
       if (dwError == ERROR_INSUFFICIENT_BUFFER)
       {
         //Expand the buffer and  loop around again
         nChars *= 2;
       }
       else
-        return FALSE;
+        return false;
     }
     else
     {
-      bWantStop = TRUE;
+      bWantStop = true;
 
       size_t i = 0;
-      #pragma warning(suppress: 6385)
-      while (devices.m_pData[i] != _T('\0'))
+      #pragma warning(suppress: 6385 26446)
+      while (devices[i] != _T('\0'))
       {
         //Get the current device name
-        LPCTSTR pszCurrentDevice = &(devices.m_pData[i]);
+#pragma warning(suppress: 26429 26446)
+        LPCTSTR pszCurrentDevice = &(devices[i]);
 
         //If it looks like "COMX" then
         //add it to the array which will be returned
-        size_t nLen = _tcslen(pszCurrentDevice);
+        const size_t nLen = _tcslen(pszCurrentDevice);
         if (nLen > 3)
         {
-          if ((_tcsnicmp(pszCurrentDevice, _T("COM"), 3) == 0) && IsNumeric(&(pszCurrentDevice[3]), FALSE))
+#pragma warning(suppress: 26481)
+          if ((_tcsnicmp(pszCurrentDevice, _T("COM"), 3) == 0) && IsNumeric(&(pszCurrentDevice[3]), false))
           {
             //Work out the port number
-            int nPort = _ttoi(&pszCurrentDevice[3]);
-          #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+#pragma warning(suppress: 26481)
+            const int nPort = _ttoi(&pszCurrentDevice[3]);
+#pragma warning(suppress: 26489)
             ports.push_back(nPort);
-          #else
-            ports.Add(nPort);
-          #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
           }
         }
 
@@ -613,142 +582,121 @@ _Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingQueryDosDevice(_I
     }
   }
 
-  return TRUE;
+  return true;
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_QUERYDOSDEVICE
 
 #ifndef NO_CENUMERATESERIAL_USING_GETDEFAULTCOMMCONFIG
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingGetDefaultCommConfig(_Inout_ CPortsArray& ports)
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingGetDefaultCommConfig(_Inout_ CPortsArray& ports)
 {
   //Make sure we clear out any elements which may already be in the array
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   ports.clear();
-#else
-  ports.RemoveAll();
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
 
   //Up to 255 COM ports are supported so we iterate through all of them seeing
   //if we can get the default configuration
   for (UINT i=1; i<256; i++)
   {
     //Form the Raw device name
-    TCHAR szPort[32];
-    szPort[0] = _T('\0');
-    _stprintf_s(szPort, _T("COM%u"), i);
+    ATL::CAtlString sPort;
+    sPort.Format(_T("COM%u"), i);
 
-    COMMCONFIG cc;
+    COMMCONFIG cc = { 0 };
     DWORD dwSize = sizeof(COMMCONFIG);
-    if (GetDefaultCommConfig(szPort, &cc, &dwSize))
-    {
-    #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+    if (GetDefaultCommConfig(sPort, &cc, &dwSize))
+#pragma warning(suppress: 26489)
       ports.push_back(i);
-    #else
-      ports.Add(i);
-    #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-    }
   }
 
   //Return the success indicator
-  return TRUE;
+  return true;
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_GETDEFAULTCOMMCONFIG
 
 #ifndef NO_CENUMERATESERIAL_USING_SETUPAPI1
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingSetupAPI1(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames)
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingSetupAPI1(_Inout_ CPortAndNamesArray& ports)
 {
   //Delegate the main work of this method to the helper method
-  return QueryUsingSetupAPI(GUID_DEVINTERFACE_COMPORT, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE, ports, friendlyNames);
+  return QueryUsingSetupAPI(GUID_DEVINTERFACE_COMPORT, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE, ports);
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_SETUPAPI1
 
 #ifndef NO_CENUMERATESERIAL_USING_SETUPAPI2
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingSetupAPI2(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames)
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingSetupAPI2(_Inout_ CPortAndNamesArray& ports)
 {
   //Delegate the main work of this method to the helper method
-  return QueryUsingSetupAPI(GUID_DEVINTERFACE_SERENUM_BUS_ENUMERATOR, DIGCF_PRESENT, ports, friendlyNames);
+  return QueryUsingSetupAPI(GUID_DEVINTERFACE_SERENUM_BUS_ENUMERATOR, DIGCF_PRESENT, ports);
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_SETUPAPI2
 
 #ifndef NO_CENUMERATESERIAL_USING_ENUMPORTS
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingEnumPorts(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames)
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingEnumPorts(_Inout_ CPortAndNamesArray& ports)
 {
   //Set our output parameters to sane defaults
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   ports.clear();
-  friendlyNames.clear();
-#else
-  ports.RemoveAll();
-  friendlyNames.RemoveAll();
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
 
   //Call the first time to determine the size of the buffer to allocate
   DWORD cbNeeded = 0;
   DWORD dwPorts = 0;
   if (!EnumPorts(nullptr, 2, nullptr, 0, &cbNeeded, &dwPorts))
   {
-    DWORD dwError = GetLastError();
+    const DWORD dwError = GetLastError();
     if (dwError != ERROR_INSUFFICIENT_BUFFER)
-      return FALSE;
+      return false;
   }
 
   //What will be the return value
-  BOOL bSuccess = FALSE;
+  bool bSuccess = false;
 
   //Allocate the buffer and recall
-  ATL::CHeapPtr<BYTE> portsBuffer;
-  if (!portsBuffer.Allocate(cbNeeded))
-  {
-    SetLastError(ERROR_OUTOFMEMORY);
-    return FALSE;
-  }
-
-  bSuccess = EnumPorts(nullptr, 2, portsBuffer.m_pData, cbNeeded, &cbNeeded, &dwPorts);
+  std::vector<BYTE> portsBuffer;
+  portsBuffer.resize(cbNeeded);
+#pragma warning(suppress: 26446)
+  bSuccess = EnumPorts(nullptr, 2, &(portsBuffer[0]), cbNeeded, &cbNeeded, &dwPorts);
   if (bSuccess)
   {
-    PORT_INFO_2* pPortInfo = reinterpret_cast<PORT_INFO_2*>(portsBuffer.m_pData);
+#pragma warning(suppress: 26429 26490)
+    const PORT_INFO_2* pPortInfo = reinterpret_cast<const PORT_INFO_2*>(portsBuffer.data());
     for (DWORD i=0; i<dwPorts; i++)
     {
       //If it looks like "COMX" then
       //add it to the array which will be returned
-      size_t nLen = _tcslen(pPortInfo->pPortName);
+#pragma warning(suppress: 26486 26489)
+      const size_t nLen = _tcslen(pPortInfo->pPortName);
       if (nLen > 3)
       {
-        if ((_tcsnicmp(pPortInfo->pPortName, _T("COM"), 3) == 0) && IsNumeric(&(pPortInfo->pPortName[3]), TRUE))
+#pragma warning(suppress: 26486 26481 26489)
+        if ((_tcsnicmp(pPortInfo->pPortName, _T("COM"), 3) == 0) && IsNumeric(&(pPortInfo->pPortName[3]), true))
         {
           //Work out the port number
-          int nPort = _ttoi(&(pPortInfo->pPortName[3]));
-        #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-          ports.push_back(nPort);
-          friendlyNames.push_back(pPortInfo->pDescription);
-        #else
-          ports.Add(nPort);
-          friendlyNames.Add(pPortInfo->pDescription);
-        #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+#pragma warning(suppress: 26481 26489)
+          const int nPort = _ttoi(&(pPortInfo->pPortName[3]));
+          std::pair<UINT, String> pair;
+          pair.first = nPort;
+#pragma warning(suppress: 26486 26489)
+          pair.second = pPortInfo->pDescription;
+#pragma warning(suppress: 26489)
+          ports.push_back(pair);
         }
       }
 
+#pragma warning(suppress: 26481)
       pPortInfo++;
     }
   }
-  
+
   return bSuccess;
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_ENUMPORTS
 
 #ifndef NO_CENUMERATESERIAL_USING_WMI
-HRESULT CEnumerateSerial::UsingWMI(_Inout_ CPortsArray& ports, _Inout_ CNamesArray& friendlyNames)
+HRESULT CEnumerateSerial::UsingWMI(_Inout_ CPortAndNamesArray& ports)
 {
   //Set our output parameters to sane defaults
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   ports.clear();
-  friendlyNames.clear();
-#else
-  ports.RemoveAll();
-  friendlyNames.RemoveAll();
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
 
   //Create the WBEM locator
   ATL::CComPtr<IWbemLocator> pLocator;
+#pragma warning(suppress: 26490)
   HRESULT hr = CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, reinterpret_cast<void**>(&pLocator));
   if (FAILED(hr))
     return hr;
@@ -772,76 +720,69 @@ HRESULT CEnumerateSerial::UsingWMI(_Inout_ CPortsArray& ports, _Inout_ CNamesArr
   {
     ULONG uReturned = 0;
     ATL::CComPtr<IWbemClassObject> apObj[10];
+#pragma warning(suppress: 26490)
     hr = pClassObject->Next(WBEM_INFINITE, 10, reinterpret_cast<IWbemClassObject**>(apObj), &uReturned);
     if (SUCCEEDED(hr))
     {
       for (ULONG n=0; n<uReturned; n++)
       {
         ATL::CComVariant varProperty1;
-        HRESULT hrGet = apObj[n]->Get(L"DeviceID", 0, &varProperty1, nullptr, nullptr);
-        if (SUCCEEDED(hrGet) && (varProperty1.vt == VT_BSTR) && (wcslen(varProperty1.bstrVal) > 3))
+#pragma warning(suppress: 26446 26482 26489 26486)
+        const HRESULT hrGet = apObj[n]->Get(L"DeviceID", 0, &varProperty1, nullptr, nullptr);
+#pragma warning(suppress: 26446 26482 26489 26486)
+		if (SUCCEEDED(hrGet) && (varProperty1.vt == VT_BSTR) && (wcslen(varProperty1.bstrVal) > 3))
         {
           //If it looks like "COMX" then add it to the array which will be returned
-          if ((_wcsnicmp(varProperty1.bstrVal, L"COM", 3) == 0) && IsNumeric(&(varProperty1.bstrVal[3]), TRUE))
+#pragma warning(suppress: 26481 26486 26489)
+          if ((_wcsnicmp(varProperty1.bstrVal, L"COM", 3) == 0) && IsNumeric(&(varProperty1.bstrVal[3]), true))
           {
             //Work out the port number
-            int nPort = _wtoi(&(varProperty1.bstrVal[3]));
-          #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-            ports.push_back(nPort);
-          #else
-            ports.Add(nPort);
-          #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+#pragma warning(suppress: 26481 26489)
+            const int nPort = _wtoi(&(varProperty1.bstrVal[3]));
+
+            std::pair<UINT, String> pair;
+            pair.first = nPort;
 
             //Also get the friendly name of the port
             ATL::CComVariant varProperty2;
+#pragma warning(suppress: 26446 26482 26486)
             if (SUCCEEDED(apObj[n]->Get(L"Name", 0, &varProperty2, nullptr, nullptr)) && (varProperty2.vt == VT_BSTR))
             {
-          #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
             #ifdef _UNICODE
               std::wstring szName(varProperty2.bstrVal);
             #else
-              std::string szName(ATL::CW2A(varProperty2.bstrVal));
+#pragma warning(suppress: 26446 26482 26489 26486)
+				std::string szName(ATL::CW2A(varProperty2.bstrVal));
             #endif //#ifdef _UNICODE
-              friendlyNames.push_back(szName);
-          #else
-              friendlyNames.Add(CString(varProperty2.bstrVal));
-          #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+#pragma warning(suppress: 26489)
+              pair.second = szName;
             }
-            else
-            {
-            #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-              friendlyNames.push_back(_T(""));
-            #else
-              friendlyNames.Add(_T(""));
-            #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-            }
+
+#pragma warning(suppress: 26486 26489)
+            ports.push_back(pair);
           }
         }
       }
     }
   }
-  
+
   return S_OK;
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_WMI
 
 #ifndef NO_CENUMERATESERIAL_USING_COMDB
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingComDB(_Inout_ CPortsArray& ports)
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingComDB(_Inout_ CPortsArray& ports)
 {
   //Set our output parameters to sane defaults
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   ports.clear();
-#else
-  ports.RemoveAll();
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-  
+
   //First need to open up the DB
   HCOMDB hComDB = nullptr;
   LONG nSuccess = ComDBOpen(&hComDB);
   if (nSuccess != ERROR_SUCCESS)
   {
     SetLastError(nSuccess);
-    return FALSE;
+    return false;
   }
 
   //Work out the size of the buffer required
@@ -851,62 +792,49 @@ _Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingComDB(_Inout_ CPo
   {
     ComDBClose(hComDB);
     SetLastError(nSuccess);
-    return FALSE;
+    return false;
   }
 
-  //Allocate some heap space and recall the function
-  ATL::CHeapPtr<BYTE> portBytes;
-  if (!portBytes.Allocate(dwMaxPortsReported))
-  {
-    ComDBClose(hComDB);
-    SetLastError(ERROR_OUTOFMEMORY);
-    return FALSE;
-  }
-
-  LONG nStatus = ComDBGetCurrentPortUsage(hComDB, portBytes.m_pData, dwMaxPortsReported, CDB_REPORT_BYTES, &dwMaxPortsReported);
+  //Allocate some space and recall the function
+  std::vector<BYTE> portBytes;
+  portBytes.resize(dwMaxPortsReported);
+#pragma warning(suppress: 26446)
+  const LONG nStatus = ComDBGetCurrentPortUsage(hComDB, &(portBytes[0]), dwMaxPortsReported, CDB_REPORT_BYTES, &dwMaxPortsReported);
   if (nStatus != ERROR_SUCCESS)
   {
     ComDBClose(hComDB);
     SetLastError(nStatus);
-    return FALSE;
+    return false;
   }
 
   //Work thro the byte bit array for ports which are in use
   for (DWORD i=0; i<dwMaxPortsReported; i++)
   {
-    if (portBytes.m_pData[i])
-    {
-    #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
+#pragma warning(suppress: 26446)
+    if (portBytes[i])
+#pragma warning(suppress: 26489)
       ports.push_back(i + 1);
-    #else
-      ports.Add(i + 1);
-    #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-    }
   }
-    
+
   //Close the DB
   ComDBClose(hComDB);
 
-  return TRUE;
+  return true;
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_COMDB
 
 #ifndef NO_CENUMERATESERIAL_USING_REGISTRY
-_Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingRegistry(_Inout_ CNamesArray& ports)
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingRegistry(_Inout_ CNamesArray& ports)
 {
   //Set our output parameters to sane defaults
-#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
   ports.clear();
-#else
-  ports.RemoveAll();
-#endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
 
   ATL::CRegKey serialCommKey;
   LSTATUS nStatus = serialCommKey.Open(HKEY_LOCAL_MACHINE, _T("HARDWARE\\DEVICEMAP\\SERIALCOMM"), KEY_QUERY_VALUE);
   if (nStatus != ERROR_SUCCESS)
   {
     SetLastError(nStatus);
-    return FALSE;
+    return false;
   }
 
   //Get the max value name and max value lengths
@@ -915,45 +843,74 @@ _Return_type_success_(return != 0) BOOL CEnumerateSerial::UsingRegistry(_Inout_ 
   if (nStatus != ERROR_SUCCESS)
   {
     SetLastError(nStatus);
-    return FALSE;
+    return false;
   }
 
-  DWORD dwMaxValueNameSizeInChars = dwMaxValueNameLen + 1; //Include space for the null terminator
-    
+  const DWORD dwMaxValueNameSizeInChars = dwMaxValueNameLen + 1; //Include space for the null terminator
+
   //Allocate some space for the value name
-  ATL::CHeapPtr<TCHAR> valueName;
-  if (!valueName.Allocate(dwMaxValueNameSizeInChars))
-  {
-    SetLastError(ERROR_OUTOFMEMORY);
-    return FALSE;
-  }
+  std::vector<TCHAR> valueName;
+  valueName.resize(dwMaxValueNameSizeInChars);
 
   //Enumerate all the values underneath HKEY_LOCAL_MACHINE\HARDWARE\DEVICEMAP\SERIALCOMM
-  BOOL bContinueEnumeration = TRUE;
+  bool bContinueEnumeration = true;
   DWORD dwIndex = 0;
   while (bContinueEnumeration)
   {
     DWORD dwValueNameSize = dwMaxValueNameSizeInChars;
-    valueName.m_pData[0] = _T('\0');
-    bContinueEnumeration = (RegEnumValue(serialCommKey, dwIndex, valueName.m_pData, &dwValueNameSize, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS);
+#pragma warning(suppress: 26446)
+    valueName[0] = _T('\0');
+#pragma warning(suppress: 26446)
+    bContinueEnumeration = (RegEnumValue(serialCommKey, dwIndex, &(valueName[0]), &dwValueNameSize, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS);
     if (bContinueEnumeration)
     {
-      LPTSTR pszPortName = nullptr;
-      if (RegQueryValueString(serialCommKey, valueName.m_pData, pszPortName))
-      {
-      #ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-        ports.push_back(pszPortName);
-      #else
-        ports.Add(pszPortName);
-      #endif //#ifndef CENUMERATESERIAL_MFC_EXTENSIONS
-        LocalFree(pszPortName);
-      }
+      String sPortName;
+#pragma warning(suppress: 26446 26486)
+      if (RegQueryValueString(serialCommKey, &(valueName[0]), sPortName))
+#pragma warning(suppress: 26489)
+        ports.push_back(sPortName);
 
       //Prepare for the next loop
       ++dwIndex;
     }
   }
-  
-  return TRUE;
+
+  return true;
 }
 #endif //#ifndef NO_CENUMERATESERIAL_USING_REGISTRY
+
+#ifndef NO_CENUMERATESERIAL_USING_GETCOMMPORTS
+_Return_type_success_(return != false) bool CEnumerateSerial::UsingGetCommPorts(_Inout_ CPortsArray& ports)
+{
+  //Make sure we clear out any elements which may already be in the array
+  ports.clear();
+
+  typedef ULONG (__stdcall GETCOMMPORTS)(PULONG, ULONG, PULONG);
+  HMODULE hDLL = LoadLibrary(_T("api-ms-win-core-comm-l1-1-0.dll"));
+  if (hDLL == nullptr)
+    return false;
+#pragma warning(suppress: 26490)
+  GETCOMMPORTS* pGetCommPorts = reinterpret_cast<GETCOMMPORTS*>(GetProcAddress(hDLL, "GetCommPorts"));
+  if (pGetCommPorts == nullptr)
+    return false;
+
+  std::vector<ULONG> intPorts;
+  intPorts.resize(255);
+  ULONG nPortNumbersFound = 0;
+#pragma warning(suppress: 26446 26472)
+  const ULONG nReturn = pGetCommPorts(&(intPorts[0]), static_cast<ULONG>(intPorts.size()), &nPortNumbersFound);
+  FreeLibrary(hDLL);
+  if (nReturn != ERROR_SUCCESS)
+  {
+    SetLastError(nReturn);
+    return false;
+  }
+
+  for (ULONG i=0; i<nPortNumbersFound; i++)
+#pragma warning(suppress: 26446 26489)
+    ports.push_back(intPorts[i]);
+
+  //Return the success indicator
+  return true;
+}
+#endif //#ifndef NO_CENUMERATESERIAL_USING_GETCOMMPORTS

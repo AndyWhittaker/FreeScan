@@ -31,7 +31,7 @@ CDetailDlg::CDetailDlg() : CTTPropertyPage(CDetailDlg::IDD)
 	//}}AFX_DATA_INIT
 
 	Enumerate(); // Build a list of available serial ports
-	 m_pMainDlg = NULL;
+	m_pMainDlg = NULL;
 	m_bCSVFirstTime = TRUE;
 	m_bLogFirstTime = TRUE;
 

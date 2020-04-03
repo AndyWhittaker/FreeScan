@@ -1,5 +1,19 @@
 // Base code is derivitive of Zafir's CString class found on the www.CodeGuru.com site.
 
+/* For future reference from a post from 2008 in codeguru:
+Zapper, that article is 9 YEARS OLD.
+
+The missing features referred to by the article to have long been implemented in CString.
+
+In addition, back then CString had a dependency on MFC, but since Visual C++ 2005,
+his dependency has been removed and MFC is no longer required to use CString. The underlying
+CString functionality is implemented by CStringT and you just need to include "atlstr.h" to use it in your app.
+
+You can read all about the CStringT class in msdn.
+P.S. Don't use CStringT directly, just include "atlstr.h" and
+use CString (including the header will properly typedef CStringT into CString for you).
+*/
+
 #include "StdAfx.h"
 #include "MABString.h"
 #include "math.h"
@@ -243,7 +257,7 @@ int CStringEx::ReverseFind( LPCTSTR lpszSub, int startpos /*= -1*/ ) const
 // startpos 		- Position to start looking from, in reverse dir
 int CStringEx::ReverseFindNoCase(TCHAR ch, int startpos /*= -1*/ ) const
 {
-	TCHAR a[2];
+	TCHAR a[3];
 	a[1] = ch;
 	a[2] = 0;
 	return ReverseFindNoCase( a, startpos );

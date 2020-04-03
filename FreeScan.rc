@@ -124,12 +124,11 @@ BEGIN
 END
 
 IDD_STATUS DIALOGEX 0, 0, 194, 236
-STYLE DS_SETFONT | DS_3DLOOK | WS_POPUP | WS_CAPTION
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
 EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "Status Messages"
-FONT 8, "MS Sans Serif", 0, 0, 0x1
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    LISTBOX         IDC_STATUS,7,7,180,212,NOT LBS_NOTIFY | LBS_WANTKEYBOARDINPUT | LBS_EXTENDEDSEL | LBS_DISABLENOSCROLL | WS_VSCROLL | WS_HSCROLL
     EDITTEXT        IDC_TIME,7,219,180,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER | NOT WS_BORDER
 END
 
@@ -401,8 +400,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,2,0,1
- PRODUCTVERSION 3,2,0,1
+ FILEVERSION 3,2,0,2
+ PRODUCTVERSION 3,2,0,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -420,13 +419,13 @@ BEGIN
             VALUE "Comments", "FreeScan ECU ALDL scantool."
             VALUE "CompanyName", "Andy Whittaker - mail@andywhittaker.com"
             VALUE "FileDescription", "Scantool for monitoring ECUs/PCMs"
-            VALUE "FileVersion", "3.2.0.1"
+            VALUE "FileVersion", "3.2.0.2"
             VALUE "InternalName", "FreeScan"
-            VALUE "LegalCopyright", "Copyright (C) 1999-2018 Andy Whittaker, mail@andywhittaker.com"
+            VALUE "LegalCopyright", "Copyright (C) 1999-20198 Andy Whittaker, mail@andywhittaker.com"
             VALUE "LegalTrademarks", "www.andywhittaker.com"
             VALUE "OriginalFilename", "FreeScan.exe"
             VALUE "ProductName", "FreeScan"
-            VALUE "ProductVersion", "3.2.0.1"
+            VALUE "ProductVersion", "3.2.0.2"
         END
     END
     BLOCK "VarFileInfo"
@@ -3966,6 +3965,11 @@ BEGIN
     0
 END
 
+IDD_STATUS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -3977,7 +3981,7 @@ BEGIN
     IDP_OLE_INIT_FAILED     "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
     IDS_ABOUTBOX            "&About FreeScan..."
     IDS_TITLE               "FreeScan - ECU/PCM Scantool"
-    IDS_VERSION             "FreeScan v3.1.0.1"
+    IDS_VERSION             "FreeScan v3.2.0.1"
 END
 
 STRINGTABLE

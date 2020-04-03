@@ -103,7 +103,7 @@ void CStatusDlg::WriteStatus(CString csText)
 }
 
 //WriteStatus enters text into the list box at the end of the list with timestamp
-void CStatusDlg::WriteStatusLogged(CString csText) 
+void CStatusDlg::WriteStatusTimeLogged(CString csText) 
 {
 	if (m_hidden) // don't write to window when hidden
 		return;
@@ -131,12 +131,12 @@ void CStatusDlg::WriteASCII(unsigned char * buffer, int ilength)
 	for(iIndex=0; iIndex < ilength; iIndex++)
 	{
 		CString csTemp;
-		csTemp.Format("0x%02X ", buffer[iIndex]);
+		csTemp.Format(_T("0x%02X "), buffer[iIndex]);
 		cs = cs + csTemp; // concatenate string
 	}
 
 	// Now write the string.
-	WriteStatusLogged(cs);
+	WriteStatusTimeLogged(cs);
 }
 
 //Writes a formatted log entry to the log file
@@ -175,17 +175,17 @@ void CStatusDlg::WriteLogEntry(LPCTSTR pstrFormat, ...)
 // Starts or stops logging to file
 BOOL CStatusDlg::StartLog(BOOL bStart)
 {
-	CString csBuf = "";
+	CString csBuf = _T("");
 
 	if (!bStart)
 	{ // we want to close the logging file
 		if (m_file.m_hFile != CFile::hFileNull)
 		{
-			WriteStatusLogged(_T("Log file stopped"));
+			WriteStatusTimeLogged(_T("Log file stopped"));
 			m_file.Close(); // close the logging file when we exit.
 		}
 		else
-			WriteStatusLogged(_T("Log file is already closed"));
+			WriteStatusTimeLogged(_T("Log file is already closed"));
 		
 		return FALSE;
 	}
@@ -258,7 +258,7 @@ BOOL CStatusDlg::StartLog(BOOL bStart)
 		return FALSE;
 	}
 
-	WriteStatusLogged(_T("Log file has started"));
+	WriteStatusTimeLogged(_T("Log file has started"));
 
 /*
 	// Construct our File Dialog
@@ -385,7 +385,7 @@ BOOL CStatusDlg::Create(CWnd* pParentWnd)
 	return CDialog::Create(IDD, pParentWnd);
 }
 
-// This tracks the window's postition
+// This tracks the window's position
 void CStatusDlg::OnMove(int x, int y) 
 {
 	CDialog::OnMove(x, y);

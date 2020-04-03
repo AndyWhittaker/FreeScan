@@ -83,7 +83,7 @@ void CGMBaseFunctions::WriteLogEntry(LPCTSTR pstrFormat, ...)
 
 void CGMBaseFunctions::WriteStatusLogged(CString csText) 
 {
-	m_pStatusDlg->WriteStatusLogged(csText);
+	m_pStatusDlg->WriteStatusTimeLogged(csText);
 }
 
 // Calculates and checks the CRC

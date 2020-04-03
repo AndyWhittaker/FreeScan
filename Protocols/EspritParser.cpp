@@ -30,7 +30,7 @@ CEspritParser::CEspritParser()
 	memset(m_ucDTC, 0, 3);// Reset DTC buffer
 
 	CFreeScanApp* pApp = (CFreeScanApp*) AfxGetApp();
-	m_csCSVLogFile = pApp->GetProfileString("EspritParser", "CSV Log Filename", "");
+	m_csCSVLogFile = pApp->GetProfileString(_T("EspritParser"), _T("CSV Log Filename"), _T(""));
 
 	m_dwCSVRecord = 0; // Initialise the CSV record number
 }
@@ -57,11 +57,11 @@ void CEspritParser::WriteCSV(BOOL bTitle)
 	if (bTitle)
 	{
 		m_dwCSVRecord = 0;
-		csBuf = "Esprit Sample,Coolant Sensor V,Start Water Temp,TPS V,Des Idle,RPM,Road Speed,Crank Sensors,O2,Rich/Lean,Integrator,BLM,BLM Cell,Injector Base PW,IAC,Baro,MAP,A:F,TPS,MAT V,Knock Retard,Knock Count,BatV,Load,Spark,Coolant Temp,MAT,Wastegate DC,Secondary Injectors DC,Engine Running Time, A/C Demand, A/C Clutch, Closed Loop";
+		csBuf = _T("Esprit Sample,Coolant Sensor V,Start Water Temp,TPS V,Des Idle,RPM,Road Speed,Crank Sensors,O2,Rich/Lean,Integrator,BLM,BLM Cell,Injector Base PW,IAC,Baro,MAP,A:F,TPS,MAT V,Knock Retard,Knock Count,BatV,Load,Spark,Coolant Temp,MAT,Wastegate DC,Secondary Injectors DC,Engine Running Time, A/C Demand, A/C Clutch, Closed Loop");
 	}
 	else
 	{
-		csBuf.Format("%ld,%4.2f,%3.1f,%4.2f,%d,%d,%d,%d,%5.3f,%d,%d,%d,%d,%d,%d,%4.2f,%4.2f,%3.1f,%d,%4.2f,%3.1f,%d,%3.1f,%d,%3.1f,%3.1f,%3.1f,%d,%d,%d,%d,%d,%d",
+		csBuf.Format(_T("%ld,%4.2f,%3.1f,%4.2f,%d,%d,%d,%d,%5.3f,%d,%d,%d,%d,%d,%d,%4.2f,%4.2f,%3.1f,%d,%4.2f,%3.1f,%d,%3.1f,%d,%3.1f,%3.1f,%3.1f,%d,%d,%d,%d,%d,%d"),
 			m_dwCSVRecord,m_pSupervisor->m_fWaterVolts,m_pSupervisor->m_fStartWaterTemp,m_pSupervisor->m_fThrottleVolts,
 			m_pSupervisor->m_iDesiredIdle,m_pSupervisor->m_iRPM,m_pSupervisor->m_iMPH,m_pSupervisor->m_iCrankSensors,m_pSupervisor->m_fO2VoltsLeft,m_pSupervisor->m_iRichLeanCounterL,
 			m_pSupervisor->m_iIntegratorL,m_pSupervisor->m_iBLM, m_pSupervisor->m_iBLMCell,m_pSupervisor->m_iInjectorBasePWMsL,
@@ -71,24 +71,24 @@ void CEspritParser::WriteCSV(BOOL bTitle)
 			m_pSupervisor->m_iRunTime,m_pSupervisor->m_bACRequest,m_pSupervisor->m_bACClutch,m_pSupervisor->m_bEngineClosedLoop);
 		m_dwCSVRecord++;
 	}
-	csBuf = csBuf + "\n"; // Line Feed because we're logging to disk
+	csBuf = csBuf + _T("\n"); // Line Feed because we're logging to disk
 	m_file.WriteString(csBuf);
 }
 
 // Starts or stops csv logging to file
 BOOL CEspritParser::StartCSVLog(BOOL bStart)
 {
-	CString csBuf = "";
+	CString csBuf = _T("");
 
 	if (!bStart)
 	{ // we want to close the logging file
 		if (m_file.m_hFile != CFile::hFileNull)
 		{
-			WriteStatusLogged("CSV Log has been stopped");
+			WriteStatusLogged(_T("CSV Log has been stopped"));
 			m_file.Close(); // close the logging file when we exit.
 		}
 		else
-			WriteStatusLogged("CSV Log is already closed");
+			WriteStatusLogged(_T("CSV Log is already closed"));
 
 		return FALSE;
 	}
@@ -96,13 +96,13 @@ BOOL CEspritParser::StartCSVLog(BOOL bStart)
 	// We now must want to log to a file
 
 	// Construct our File Dialog
-	CFileDialog		Dialog(FALSE, "csv", 
+	CFileDialog		Dialog(FALSE, _T("csv"), 
 						m_csCSVLogFile, 
 						OFN_HIDEREADONLY | OFN_LONGNAMES | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT,
-						"log Files (*.csv)|*.csv|All Files (*.*)|*.*||", NULL);
+						_T("log Files (*.csv)|*.csv|All Files (*.*)|*.*||"), NULL);
 
 	// Change the title
-	Dialog.m_ofn.lpstrTitle = "Create/Open CSV Log";
+	Dialog.m_ofn.lpstrTitle = _T("Create/Open CSV Log");
 
 	// Display the dialog box
 	if (Dialog.DoModal() == IDOK)
@@ -111,17 +111,17 @@ BOOL CEspritParser::StartCSVLog(BOOL bStart)
 
 		if (!m_file.Open(m_csCSVLogFile, CFile::modeCreate | CFile::modeReadWrite | CFile::typeText))
 		{
-			csBuf.Format("Cannot open %s", m_csCSVLogFile);
+			csBuf.Format(_T("Cannot open %s"), m_csCSVLogFile.GetString());
 			WriteStatus(csBuf);
 			AfxMessageBox(csBuf, MB_OK | MB_ICONSTOP );
 			return FALSE;
 		}
 
-		WriteStatusLogged("CSV Log has been opened");
+		WriteStatusLogged(_T("CSV Log has been opened"));
 		WriteCSV(TRUE); // log our data to a csv file
 	}
 	else // User pressed cancel
-		WriteStatus("User cancelled CSV log");
+		WriteStatus(_T("User cancelled CSV log"));
 
 	if (m_file.m_hFile != NULL)
 		return TRUE;
@@ -168,14 +168,14 @@ int CEspritParser::Parse(unsigned char* buffer, int iLength)
 					else
 					{
 						CString	temp; // write to the spy window
-						temp.Format("Unrecognised Mode: %02x", buffer[iIndex]);
+						temp.Format(_T("Unrecognised Mode: %02x"), buffer[iIndex]);
 						WriteStatus(temp);
 					}
 					iIndex += iPacketLength;
 				}
 				// Check CRC
 				if (!CheckChecksum(pPacketStart, 3 + iPacketLength))
-					WriteStatus("Checksum Error");
+					WriteStatus(_T("Checksum Error"));
 				break;
 			}
 		case 0x0a: // Computed Values
@@ -187,7 +187,7 @@ int CEspritParser::Parse(unsigned char* buffer, int iLength)
 				iIndex += iPacketLength; // should be 3
 				// Check CRC
 				if (!CheckChecksum(pPacketStart, 3 + iPacketLength))
-					WriteStatus("Checksum Error");
+					WriteStatus(_T("Checksum Error"));
 				break;
 			}
 		case 0x05: // ADC Values
@@ -199,13 +199,13 @@ int CEspritParser::Parse(unsigned char* buffer, int iLength)
 				iIndex += iPacketLength; // should be 10 or 58 from ECU
 				// Check CRC
 				if (!CheckChecksum(pPacketStart, 3 + iPacketLength))
-					WriteStatus("Checksum Error");
+					WriteStatus(_T("Checksum Error"));
 				break;
 			}
 		default:
 			{
 			CString buf;
-			buf.Format("%02x <- Unrecognised Header", buffer[iIndex]);
+			buf.Format(_T("%02x <- Unrecognised Header"), buffer[iIndex]);
 			WriteStatus(buf);
 			}
 		}// Switch
@@ -217,14 +217,14 @@ int CEspritParser::Parse(unsigned char* buffer, int iLength)
 	return iLength; // Successfully parsed.
 }
 
-// Translates the incomming data stream as ADC Values
+// Translates the incoming data stream as ADC Values
 void CEspritParser::ParseADC(unsigned char* buffer, int len)
 {
 	int iIndex;
 
 	if (len>10)
 	{
-		WriteStatus("Warning: F005 larger than expected, packet truncated.");
+		WriteStatus(_T("Warning: F005 larger than expected, packet truncated."));
 		len = 10;
 	}
 	else
@@ -258,7 +258,7 @@ void CEspritParser::ParseAnalogues(unsigned char* buffer, int len)
 
 	if (len>3)
 	{
-		WriteStatus("Warning: F00A larger than expected, packet truncated.");
+		WriteStatus(_T("Warning: F00A larger than expected, packet truncated."));
 		len = 3;
 	}
 		// copy buffer into raw data array
@@ -277,12 +277,12 @@ void CEspritParser::ParseMode1(unsigned char* buffer, int len)
 
 	if (len<10) // remember half duplex. We read our commands as well
 	{
-		WriteStatus("Received our TX command echo for mode 1.");
+		WriteStatus(_T("Received our TX command echo for mode 1."));
 		return;
 	}
 	else if (len>65)
 	{
-		WriteStatus("Warning: F001 larger than expected, packet truncated.");
+		WriteStatus(_T("Warning: F001 larger than expected, packet truncated."));
 		len = 65;
 	}
 	// copy buffer into raw data array

@@ -1,5 +1,5 @@
 # FreeScan
-FreeScan is a ALDL Scan Tool for various GM based ALDL vehicles
+FreeScan is an ALDL Scan Tool for various GM based ALDL vehicles
 
 ## Background
 When I owned my Lotus Esprit GT3 MY1997, I was concerned with the lack of diagnostic scan tools available. Therefore, I took apart the ECU, unplugged the MemCal, read in the binary code, disassembled it with IDA Pro and found out how the diagnostics worked.

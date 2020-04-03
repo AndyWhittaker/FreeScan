@@ -49,7 +49,7 @@ public:
 
 	//Attributes
 	CStatusDlg*		m_pStatusDlg; // This is the "Spy" window
-	CSupervisor*	m_pSupervisor; // This phathoms out the data-stream
+	CSupervisor*	m_pSupervisor; // This fathoms out the data-stream
 	BOOL			m_bHasRun; // Has the supervisor ran at least once?
 
 	//Classes for our property pages

@@ -228,7 +228,7 @@ void CFreeScanDlg::WriteLogEntry(LPCTSTR pstrFormat, ...)
 
 void CFreeScanDlg::WriteStatusLogged(CString csText) 
 {
-	m_pStatusDlg->WriteStatusLogged(csText);
+	m_pStatusDlg->WriteStatusTimeLogged(csText);
 }
 
 // Starts or stops csv logging to file

@@ -52,7 +52,7 @@ public:
 protected:
 //	CUIntArray m_cuPorts; // Stores the enumerated COM Port numbers
 	CEnumerateSerial::CPortsArray m_cuPorts; // Stores the enumerated COM Port numbers
-	CEnumerateSerial m_EnumSerial;//ARW 15/01/2005 New EnumSerial Class
+	CEnumerateSerial m_EnumSerial;//ARW 11/06/2019 New EnumSerial Class
 	BOOL	m_bCSVFirstTime;
 	BOOL	m_bLogFirstTime;
 	int		m_iModel; // Model Number

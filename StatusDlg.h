@@ -24,7 +24,7 @@ public:
 	~CStatusDlg();   // standard destructor
 
 	void WriteStatus(CString csText);
-	void WriteStatusLogged(CString csText);
+	void WriteStatusTimeLogged(CString csText);
 	void WriteASCII(unsigned char * buffer, int ilength);
 	void WriteLogEntry(LPCTSTR pstrFormat, ...);
 	BOOL StartLog(BOOL bStart);

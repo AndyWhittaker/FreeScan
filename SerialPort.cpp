@@ -20,6 +20,7 @@
 
 #include "stdafx.h"
 #include "SerialPort.h"
+#include "EnumSer.h"
 #include <assert.h>
  
 #ifdef _DEBUG
@@ -28,7 +29,7 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-//Staic members must be globally defined
+//Static members must be globally defined
 CRITICAL_SECTION	CSerialPort::m_csCommunicationSync;
 OVERLAPPED			CSerialPort::m_ov;
 int					CSerialPort::m_nActualWriteBufferSize = 0;
@@ -371,6 +372,8 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 	TRACE(_T("Initialisation for Com Port %d completed.\n"),
 		m_nPortNr);
 
+	m_bInitDone = TRUE;
+
 	return TRUE;
 }
 
@@ -392,7 +395,7 @@ UINT CSerialPort::CommThread(LPVOID pParam)
 	DWORD Event = 0;
 	DWORD CommEvent = 0;
 	DWORD dwError = 0;
-	COMSTAT comstat;
+	COMSTAT comstat = { 0 };
 	BOOL  bResult = TRUE;
 		
 	// Clear comm buffers at startup
@@ -544,6 +547,10 @@ UINT CSerialPort::CommThread(LPVOID pParam)
 // Start comm watching
 BOOL CSerialPort::StartMonitoring()
 {
+	if (m_bInitDone == false) {
+		TRACE(_T("Com Port %d cannot be started. Init did not complete.\n"), m_nPortNr);
+		return FALSE;
+	}
 	TRACE(_T("Com Port %d starting monitoring.\n"), m_nPortNr);
 	if (!(m_Thread = AfxBeginThread(CommThread, this, THREAD_PRIORITY_NORMAL)))
 		return FALSE;
@@ -557,6 +564,11 @@ BOOL CSerialPort::StartMonitoring()
 // Restart the comm thread
 BOOL CSerialPort::RestartMonitoring()
 {
+	if (m_bInitDone == false) {
+		TRACE(_T("Com Port %d cannot be restarted. Init did not complete.\n"), m_nPortNr);
+		return FALSE;
+	}
+
 	TRACE(_T("Com Port %d re-starting monitoring.\n"), m_nPortNr);
 	// Clear buffer
 	PurgeComm(m_hComm, PURGE_RXCLEAR | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_TXABORT);

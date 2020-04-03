@@ -131,7 +131,7 @@ static	OVERLAPPED		m_ov;
 	DWORD				m_nWriteBufferSize;
 static int				m_nActualWriteBufferSize;
 	DWORD				m_nWriteDelay; // milliseconds that write waits before write
-
+	BOOL                m_bInitDone;
 	DECLARE_DYNAMIC(CSerialPort)
 };
 

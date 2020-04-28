@@ -3,11 +3,6 @@
 // (c) 1996-99 Andy Whittaker, Chester, England. 
 // mail@andywhittaker.com
 
-#include "stdafx.h"
-#include "FreeScan.h"
-#include "MainDlg.h"
-#include "Supervisor.h"
-
 #include "DashBoardDlg.h"
 
 #ifdef _DEBUG
@@ -15,6 +10,36 @@
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
 #endif
+
+static const int THROTTLE_MIN = 0;
+static const int THROTTLE_MAX = 100;
+
+static const int LOAD_MIN = 0;
+static const int LOAD_MAX = 100;
+
+static const int BOOST_MIN = 0;
+static const int BOOST_MAX = 220; // 2.20 Bar
+
+static const int MAT_MIN = 0;
+static const int MAT_MAX = 800; // 80°C
+
+static const int SPEEDO_MIN = 0;
+static const int SPEEDO_MAX = 170; // 170 MPH
+
+static const int TACHO_MIN = 0;
+static const int TACHO_MAX = 8000; // 8000 RPM
+
+static const int AIR_FUEL_RATIO_MIN = 100; // 10.0
+static const int AIR_FUEL_RATIO_MAX = 170; // 17.0
+
+static const int WATER_MIN = 500; // 50°C
+static const int WATER_MAX = 1100; // 110°C
+
+static const int BAT_VOLT_MIN = 100; // 10.0V
+static const int BAT_VOLT_MAX = 170; // 17.0V
+
+static const int SPARK_MIN = 0;
+static const int SPARK_MAX = 600; // 60.0°
 
 /////////////////////////////////////////////////////////////////////////////
 // CDashBoardDlg property page
@@ -26,11 +51,7 @@ CDashBoardDlg::CDashBoardDlg() : CTTPropertyPage(CDashBoardDlg::IDD)
 	//{{AFX_DATA_INIT(CDashBoardDlg)
 		// NOTE: the ClassWizard will add member initialization here
 	//}}AFX_DATA_INIT
-	m_pMainDlg = NULL;
-
-	m_fWaterTemp = 0.0;
-	m_fMATTemp = 0.0;
-	m_fBatteryVolts = 0.0;
+	m_pSupervisor = NULL;
 }
 
 CDashBoardDlg::~CDashBoardDlg()
@@ -42,117 +63,119 @@ void CDashBoardDlg::DoDataExchange(CDataExchange* pDX)
 	CTTPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CDashBoardDlg)
 	DDX_Control(pDX, IDC_THROT, m_Throttle);
+	DDX_Control(pDX, IDC_ENGINELOAD, m_EngineLoad);	
 	DDX_Control(pDX, IDC_BOOST, m_Boost);
+	DDX_Control(pDX, IDC_BOOST_TEXT, m_BoostText);
 	DDX_Control(pDX, IDC_MAT, m_MAT);
+	DDX_Control(pDX, IDC_MAT_TEXT, m_MATText);
 	DDX_Control(pDX, IDC_SPEEDO, m_Speedo);
+	DDX_Control(pDX, IDC_SPEEDO_MPH_TEXT, m_SpeedoMphText);
+	DDX_Control(pDX, IDC_SPEEDO_KPH_TEXT, m_SpeedoKphText);
 	DDX_Control(pDX, IDC_TACHO, m_Tacho);
+	DDX_Control(pDX, IDC_TACHO_TEXT, m_TachoText);	
+	DDX_Control(pDX, IDC_AIRFUEL, m_AirFuelRatio);
+	DDX_Control(pDX, IDC_AIRFUEL_TEXT, m_AirFuelRatioText);
 	DDX_Control(pDX, IDC_WATER, m_Water);
+	DDX_Control(pDX, IDC_WATER_TEXT, m_WaterText);	
 	DDX_Control(pDX, IDC_VOLT, m_Volt);
+	DDX_Control(pDX, IDC_VOLT_TEXT, m_VoltText);
 	DDX_Control(pDX, IDC_SPARK, m_Spark);
+	DDX_Control(pDX, IDC_SPARK_TEXT, m_SparkText);
 	//}}AFX_DATA_MAP
 
 	//Updates the dialog.
-	Refresh();
+	if (m_pSupervisor != NULL) {
+		Refresh(m_pSupervisor->GetEcuData());
+	}
 }
 
-// Returns a pointer to the Supervisor
-CSupervisor* CDashBoardDlg::GetSupervisor(void)
-{
-	return m_pMainDlg->m_pSupervisor;
+static inline void updateField(CProgressCtrl *const progressMeter, CEdit * const textBox, const char *const textFormat, const float fValue, const float progressMeterScaleFactor, const int progressMeterMin, const int progressMeterMax) {
+	if (CEcuData::isValid(fValue)) {
+		if (textBox != NULL && textFormat != NULL) {
+			CString buf;
+			buf.Format(textFormat, fValue);
+			textBox->SetWindowText(buf);
+		}
+
+		if (progressMeter != NULL) {
+			int progressMeterValue = (int)(fValue * progressMeterScaleFactor);
+			if (progressMeterValue < progressMeterMin) {
+				progressMeterValue = progressMeterMin;
+			}
+			else if (progressMeterValue > progressMeterMax) {
+				progressMeterValue = progressMeterMax;
+			}
+			progressMeter->SetPos(progressMeterValue);
+		}
+	}
+	else if (textBox != NULL) {
+		textBox->SetWindowText("N/A ");
+	}
 }
 
-// Returns a pointer to the Supervisor
-CSupervisor* CDashBoardDlg::GetData(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
+static inline void updateField(CProgressCtrl *const progressMeter, CEdit * const textBox, const char *const textFormat, const int iValue, const int progressMeterScaleFactor, const int progressMeterMin, const int progressMeterMax) {
+	if (CEcuData::isValid(iValue)) {
+		if (textBox != NULL) {
+			CString buf;
+			buf.Format(textFormat, iValue);
+			textBox->SetWindowText(buf);
+		}
 
-// Returns if the ECU is interactive
-BOOL CDashBoardDlg::GetInteract(void)
-{
-	return GetSupervisor()->GetInteract();
-}
-
-// Returns the current ECU Mode
-DWORD CDashBoardDlg::GetCurrentMode(void)
-{
-	return GetSupervisor()->GetCurrentMode();
+		if (progressMeter != NULL) {
+			int progressMeterValue = iValue * progressMeterScaleFactor;
+			if (progressMeterValue < progressMeterMin) {
+				progressMeterValue = progressMeterMin;
+			}
+			else if (progressMeterValue > progressMeterMax) {
+				progressMeterValue = progressMeterMax;
+			}
+			progressMeter->SetPos(progressMeterValue);
+		}
+	}
+	else if (textBox != NULL) {
+		textBox->SetWindowText("N/A ");
+	}
 }
 
 // Updates all of our controls
-void CDashBoardDlg::Refresh(void)
+void CDashBoardDlg::Refresh(const CEcuData* const ecuData)
 {
-	//CProgressCtrl
+	updateField(&m_AirFuelRatio, &m_AirFuelRatioText, "%3.1f ", ecuData->m_fAFRatio, 10.0f, AIR_FUEL_RATIO_MIN, AIR_FUEL_RATIO_MAX);
 
-	CString buf;
-	DWORD	dwCurrentMode = GetCurrentMode();
+	updateField(&m_Water, &m_WaterText, "%3.1f ", ecuData->m_fWaterTemp, 10.0f, WATER_MIN, WATER_MAX);
+	
+	updateField(&m_MAT, &m_MATText, "%3.1f ", ecuData->m_fMATTemp, 10.0f, MAT_MIN, MAT_MAX);
+	
+	updateField(&m_Volt, &m_VoltText, "%3.1f ", ecuData->m_fBatteryVolts, 10.0f, BAT_VOLT_MIN, BAT_VOLT_MAX);
+	
+	updateField(&m_Boost, &m_BoostText, "%3.2f ", ecuData->m_fMAP, 100.0f, BOOST_MIN, BOOST_MAX);
+	
+	updateField(&m_Spark, &m_SparkText, "%3.1f ", ecuData->m_fSparkAdvance, 10.0f, SPARK_MIN, SPARK_MAX);
 
-	float fValue = GetData()->m_fWaterTemp;
-	if (fValue != m_fWaterTemp)
-	{ // check for a different value
-		buf.Format("Water Temp: %3.1f", fValue);
-		m_Water.SetCaption(buf);
-		if (fValue < 49.5)
-			fValue = 49.5;
-		m_Water.SetValue(fValue);
-		m_fWaterTemp = fValue; // store the new value
-	}
+	updateField(&m_Tacho, &m_TachoText, "%4d ", ecuData->m_iRPM, 1, TACHO_MIN, TACHO_MAX);
 
-	fValue = GetData()->m_fMATTemp;
-	if (fValue != m_fMATTemp)
-	{ // check for a different value
-		buf.Format("Mass Air Temp: %3.1f", fValue);
-		m_MAT.SetCaption(buf);
-		if (fValue < 19.5)
-			fValue = 19.5;
-		m_MAT.SetValue(fValue);
-		m_fMATTemp = fValue; // store the new value
-	}
+	updateField(&m_Speedo, &m_SpeedoMphText, "%3d ", ecuData->m_iMPH,       1, SPEEDO_MIN, SPEEDO_MAX);
+	updateField(NULL,      &m_SpeedoKphText, "%3d ", ecuData->m_iMPH_inKPH, 1,          0,          0);
 
-	fValue = GetData()->m_fBatteryVolts;
-	if (fValue != m_fBatteryVolts)
-	{ // check for a different value
-		buf.Format("Battery Volts: %3.1f", fValue);
-		m_Volt.SetCaption(buf);
-		if (fValue < (float)7.9)
-			fValue = (float)7.9;
-		m_Volt.SetValue(fValue);
-		m_fBatteryVolts = fValue; // store the new value
-	}
+	updateField(&m_Throttle, NULL, NULL, ecuData->m_iThrottlePos, 1, THROTTLE_MIN, THROTTLE_MAX);
 
-	fValue = GetData()->m_fMAP;
-	buf.Format("MAP: %3.2f", fValue);
-	m_Boost.SetCaption(buf);
-	m_Boost.SetValue(fValue);
+	updateField(&m_EngineLoad, NULL, NULL, ecuData->m_iEngineLoad, 1, LOAD_MIN, LOAD_MAX);
+}
 
-	fValue = GetData()->m_fSparkAdvance;
-	buf.Format("Spark Adv: % 3.1f", fValue);
-	m_Spark.SetCaption(buf);
-		if (fValue < 0.0)
-			fValue = 0.0;
-		if (fValue > 60.0)
-			fValue = 60.0;
-	m_Spark.SetValue(fValue);
-
-	int iValue = GetData()->m_iRPM;
-	buf.Format("RPM: %4d", iValue);
-	m_Tacho.SetCaption(buf);
-	m_Tacho.SetValue(iValue);
-
-	iValue = GetData()->m_iMPH;
-	buf.Format("MPH: %3d", iValue);
-	m_Speedo.SetCaption(buf);
-	m_Speedo.SetValue(iValue);
-
-	m_Throttle.SetPos(GetData()->m_iThrottlePos);
+void CDashBoardDlg::RegisterSupervisor(CSupervisorInterface* const pSupervisor) {
+	m_pSupervisor = pSupervisor;
 }
 
 BEGIN_MESSAGE_MAP(CDashBoardDlg, CTTPropertyPage)
 	//{{AFX_MSG_MAP(CDashBoardDlg)
 	ON_WM_CTLCOLOR()
 	//}}AFX_MSG_MAP
-	ON_NOTIFY(NM_CUSTOMDRAW, IDC_THROT, &CDashBoardDlg::OnNMCustomdrawThrot)
 END_MESSAGE_MAP()
+
+static inline void setProgressMeterBounds(CProgressCtrl *const progressMeter, const int progressMeterMin, const int progressMeterMax, const int pixesWidth) {
+	progressMeter->SetRange32(progressMeterMin, progressMeterMax);
+	progressMeter->SetStep(min(1, (progressMeterMax - progressMeterMin) / pixesWidth));
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CDashBoardDlg message handlers
@@ -164,11 +187,25 @@ BOOL CDashBoardDlg::OnInitDialog()
 
 	CTTPropertyPage::OnInitDialog();
 
-	m_Throttle.SetRange(0, 100);
-	m_Throttle.SetStep(5);
+	setProgressMeterBounds(&m_Throttle, THROTTLE_MIN, THROTTLE_MAX, 80);
 
-	// Add dialog items that want ToolTip text
-//	m_toolTip.AddTool( GetDlgItem(IDC_EPROMID), IDC_EPROMID);
+	setProgressMeterBounds(&m_EngineLoad, LOAD_MIN, LOAD_MAX, 80);
+
+	setProgressMeterBounds(&m_Boost, BOOST_MIN, BOOST_MAX, 80);
+
+	setProgressMeterBounds(&m_MAT, MAT_MIN, MAT_MAX, 80);
+
+	setProgressMeterBounds(&m_Speedo, SPEEDO_MIN, SPEEDO_MAX, 240);
+
+	setProgressMeterBounds(&m_Tacho, TACHO_MIN, TACHO_MAX, 240);
+
+	setProgressMeterBounds(&m_AirFuelRatio, AIR_FUEL_RATIO_MIN, AIR_FUEL_RATIO_MAX, 80);
+
+	setProgressMeterBounds(&m_Water, WATER_MIN, WATER_MAX, 80);
+
+	setProgressMeterBounds(&m_Volt, BAT_VOLT_MIN, BAT_VOLT_MAX, 80);
+
+	setProgressMeterBounds(&m_Spark, SPARK_MIN, SPARK_MAX, 80);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX Property Pages should return FALSE
@@ -176,7 +213,7 @@ BOOL CDashBoardDlg::OnInitDialog()
 
 HBRUSH CDashBoardDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) 
 {
-	HBRUSH hbr = CTTPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
+	CTTPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
 	
 	// TODO: Change any attributes of the DC here
 		switch (nCtlColor)
@@ -187,15 +224,15 @@ HBRUSH CDashBoardDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 /*	case CTLCOLOR_EDIT:
 		pDC->SetTextColor(RGB(0,0,0));
 		pDC->SetBkColor(RGB(255,255,255));
-		return hbr;
-	//Static controls need black text and same background as m_brush
+		return hbr; */
+	//Static controls need white text and same background as m_brush
 	case CTLCOLOR_STATIC:
 		LOGBRUSH logbrush;
 		m_brush.GetLogBrush( &logbrush );
-		pDC->SetTextColor(RGB(0,0,0));
+		pDC->SetTextColor(RGB(255,255,255));
 		pDC->SetBkColor(logbrush.lbColor);
 		return m_brush;
-	//For listboxes, scrollbars, buttons, messageboxes and dialogs,
+/*	//For listboxes, scrollbars, buttons, messageboxes and dialogs,
 	//use the new brush (m_brush)
 	case CTLCOLOR_LISTBOX:
 	case CTLCOLOR_SCROLLBAR:
@@ -207,15 +244,5 @@ HBRUSH CDashBoardDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	//JUST IN CASE, return the new brush
 	default:
 		return m_brush;
-	} 
-
-	// TODO: Return a different brush if the default is not desired
-	return hbr;
-}
-
-void CDashBoardDlg::OnNMCustomdrawThrot(NMHDR *pNMHDR, LRESULT *pResult)
-{
-	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
-	// TODO: Add your control notification handler code here
-	*pResult = 0;
+	}
 }

@@ -5,11 +5,9 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "..\FreeScan.h"
 #include "ElanProtocol.h"
 
-#include "..\Supervisor.h"
+#include "GMBaseFunctions.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -20,83 +18,21 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CElanProtocol
 
-CElanProtocol::CElanProtocol()
-{
+CElanProtocol::CElanProtocol(CStatusWriter* pStatusWriter, CSupervisorInterface* pSupervisor, BOOL bInteract) : CBaseProtocol(pStatusWriter, pSupervisor, bInteract), m_parser(this) {
+	Reset();
+}
+
+CElanProtocol::~CElanProtocol() {
+}
+
+void CElanProtocol::InitializeSupportedValues(CEcuData* const ecuData) {
 	// Put your comments and release notes about the protocol here.
-	m_csComment.Format("Name: Lotus Elan 4 Cylinder\nVersion v0.7\nDate: 20th May 2000\nImplemented by Andy Whittaker\nProtocol by Ian Levy.\nTesting by Mark Hooper\n*** Alpha Version ***.");
-
-	// Recall previous settings from the registry.
-	CWinApp* pApp = AfxGetApp();
-	m_bInteract = pApp->GetProfileInt("ElanProtocol", "Interact", FALSE);
-
-	m_pcom = NULL;
-
-	OnResetStateMachine(NULL,NULL);
-}
-
-CElanProtocol::~CElanProtocol()
-{
-	// Save our settings to the registry
-	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("ElanProtocol", "Interact", m_bInteract);
-}
-
-
-BEGIN_MESSAGE_MAP(CElanProtocol, CWnd)
-	//{{AFX_MSG_MAP(CElanProtocol)
-	ON_MESSAGE(WM_PROT_CMD_RESETSTATE, OnResetStateMachine)
-	ON_MESSAGE(WM_PROT_CMD_SETINTERACT, OnInteract)
-	ON_MESSAGE(WM_PROT_CMD_GETINTERACT, OnGetInteract)
-	ON_MESSAGE(WM_PROT_CMD_GETECUMODE, OnGetCurrentMode)
-	ON_MESSAGE(WM_PROT_CMD_FORCESHUTUP, OnForceShutUp)
-	ON_MESSAGE(WM_PROT_CMD_ECUMODE, OnECUMode)
-	ON_MESSAGE(WM_PROT_CMD_STARTCSV, OnStartCSV)
-	ON_MESSAGE(WM_COMM_RXCHAR, OnCharReceived)
-	ON_WM_TIMER()
-	//}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
-void CElanProtocol::PumpMessages()
-{
-	MSG msg;
-	// if there is a message on the queue, then dispatch it
-	if(::PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE )) 
- 	{ 
-		::GetMessage(&msg, NULL, NULL, NULL);
-		::TranslateMessage(&msg);
-		::DispatchMessage(&msg);
-	} 
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Interfaces to this class
-
-// Initialises the Supervisor
-HWND CElanProtocol::Init(CSupervisor* pSupervisor, CSerialPort* pcom, CWnd* pParentWnd, CStatusDlg* pStatusDlg)
-{
-	m_pSupervisor = pSupervisor; // our owner
-	m_pStatusDlg = pStatusDlg; // Debug Window
-	m_pcom = pcom; // assign our serial port pointer.
-
-	WriteStatus("Creating Elan Protocol Window");
-	CreateProtocolWnd(pParentWnd); // creates this window for communication messages
-
-	// This sets up the com port CSerialPort Object
-	// Note: Look in SerialPort.h for the defaults:
-	// We need 8192baud, 1 start, 1 stop and no parity.
-	// We pass the CSerialPort a this pointer because it
-	// needs to send messages to this window via the CWnd Object
-	if (!m_pcom->InitPort(this, NULL))
-		WriteStatus("Failed to initialise the Com Port");
-	else
-		WriteStatus("Com Port initialised");
-
-	return m_hWnd;
+	ecuData->m_csProtocolComment.Format("Name: Lotus Elan 4 Cylinder\nVersion v0.7\nDate: 20th May 2000\nImplemented by Andy Whittaker\nProtocol by Ian Levy.\nTesting by Mark Hooper\n*** Alpha Version ***.");
+	m_parser.InitializeSupportedValues(ecuData);
 }
 
 // Resets the protocol state machine
-LONG CElanProtocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
-{
+void CElanProtocol::Reset(void) {
 	m_dwCurrentMode = 0;
 	m_dwRequestedMode = 1; // Mode we want next
 	m_bModeDone = TRUE; // Have we sent our mode request?
@@ -113,63 +49,25 @@ LONG CElanProtocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
 	m_bReadCRC = FALSE;
 
 	m_bSentOnce = FALSE;
-
-	return 0;
-}
-
-// Requests whether FreeScan talks to the ECU or not
-LONG CElanProtocol::OnInteract(WPARAM bInteract, LPARAM dummy)
-{
-	if (bInteract)
-	{
-		WriteStatus("Interaction with the ECU enabled.");
-		m_bInteract=TRUE;
-		// This is new. Provides a way of continually asking 
-		// data from an ECU that doesn't have idle chatter.
-	}
-	else
-	{
-		WriteStatus("In monitor mode, no interaction with ECU will be done.");
-		m_bInteract=FALSE;
-		KillTimer(WM_TIMER_EVT1);
-	}
-	return 0;
 }
 
 // This switches the mode number that is sent to the ECU. It changes the
 // behaviour of SendNextCommand(..).
-LONG CElanProtocol::OnECUMode(WPARAM dwMode, LPARAM Data)
-{
-	m_ucData = (unsigned char) Data; // data for ECU, e.g. Desired Idle
+void CElanProtocol::SetECUMode(const DWORD dwMode, const unsigned char data) {
+	m_ucData = data; // data for ECU, e.g. Desired Idle
 	m_dwRequestedMode = (DWORD) dwMode; // Mode we want next
 	m_bModeDone = FALSE; // Have we sent our mode request?
-	return 0;
-}
-
-LONG CElanProtocol::OnStartCSV(WPARAM bStart, LPARAM dummy)
-{
-	// call the base class function
-	return (LONG) StartCSVLog((BOOL) bStart);
-}
-
-// Gets the interact status
-LONG CElanProtocol::OnGetInteract(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_bInteract;
 }
 
 // Returns the current ECU Mode
-LONG CElanProtocol::OnGetCurrentMode(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_dwCurrentMode;
+DWORD CElanProtocol::GetCurrentMode(void) {
+	return m_dwCurrentMode;
 }
 
 // Forces Shut-Up to be sent.
-LONG CElanProtocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
-{
-	OnResetStateMachine(NULL,NULL);
+void CElanProtocol::ForceDataFromECU(void) {
+	Reset();
 	SendModeShutUp();
-	return (LONG) 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -179,7 +77,7 @@ LONG CElanProtocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
 BOOL CElanProtocol::SendIdle(void)
 { //0xf4 0x55, 0xB7
 	unsigned char	ucRequestIdle[] = { 0xf4, 0x55, 0xb7 }; // Idle
-	SetChecksum(ucRequestIdle, 3);
+	CGMBaseFunctions::SetChecksum(ucRequestIdle, 3);
 	WriteStatus("*** Sending Idle to ECU ***");
 	WriteToECU(ucRequestIdle, 3, FALSE); //No delay before transmit
 	return TRUE;
@@ -263,20 +161,13 @@ BOOL CElanProtocol::SetDesiredIdle(unsigned char DesIdle)
 	unsigned char	ucRequestDesIdle[] = { 0xf4, 0x60, 0x04, 0x01, 0x01, 0x00, 0x00, 0x10, 0xff, 0x03, 0x90, 0x00, 0x00, 0x04 };
 	ucRequestDesIdle[10] = DesIdle;
 
-	SetChecksum(ucRequestDesIdle, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestDesIdle, 14);
 	CString buf;
 	buf.Format("*** Setting Desired Idle in ECU to %d RPM ***", (int)((DesIdle * 25) / 2));
 	WriteStatus(buf);
 	// ECU should confirm with 0xF4 0x56 0x04 0xB6
 	WriteToECU(ucRequestDesIdle, 14);
 	return TRUE;
-}
-
-// Write a string to the port - This can even write NULL characters
-void CElanProtocol::WriteToECU(unsigned char* string, int stringlength, BOOL bDelay)
-{	
-	m_pSupervisor->m_dwBytesSent += stringlength;
-	m_pcom->WriteToPort(string, stringlength, bDelay);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -323,44 +214,20 @@ void CElanProtocol::SendNextCommand(void)
 		SendMode1();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// CElanProtocol message handlers
-
-// The supervisor is a hidden window. This is to enable it to receive
-// messages from itself and the serial port class.
-BOOL CElanProtocol::CreateProtocolWnd(CWnd* pParentWnd) 
-{
-	// TODO: Add your specialized code here and/or call the base class
-	DWORD	dwStyle = WS_BORDER | WS_CAPTION | WS_CHILD;
-	RECT	rect;
-	UINT nID = 67; // It's my house number!
-
-	rect.top = 0;
-	rect.bottom = 50;
-	rect.left = 0;
-	rect.right = 50;
-	
-	return Create(NULL, "ECU Elan Communications Supervisor", dwStyle, rect, pParentWnd, nID, NULL);
-}
-
 // Handle the message from the serial port class.
-LONG CElanProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
-{
-	 // convert passed variables
-	unsigned char*	pucRX = (unsigned char*) ch;
-	DWORD			uBytesRead = (DWORD) BytesRead;
-	
+BOOL CElanProtocol::OnCharsReceived(const unsigned char* const buffer, const DWORD bytesRead, CEcuData* const ecuData) {
+	BOOL			updatedEcuData = FALSE;
+
 	unsigned char	ucRX; // current byte we are reading
 	CString			buf; // for status messages
 	UINT			uByteIndex;
 	
 	// we need a loop here to process all read bytes from serial port
-	for(uByteIndex = 0; uByteIndex < uBytesRead; uByteIndex++)
+	for(uByteIndex = 0; uByteIndex < bytesRead; uByteIndex++)
 	{
-		ucRX = pucRX[uByteIndex]; // index the read-in byte
-		m_pSupervisor->m_dwBytesReceived ++;
+		ucRX = buffer[uByteIndex]; // index the read-in byte
 
-		// Character received is returned in "ch", then copied as ucRX.
+		// Character received is returned in "buffer", then copied as ucRX.
 
 		// OK, we will receive our ECU bytes, one byte at a time. Therefore, we create
 		// what is, in effect, a state machine to build up the data buffer to pass to
@@ -378,7 +245,7 @@ LONG CElanProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 				{
 					buf.Format("%02x - Finding start header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Found main start header", ucRX);
@@ -391,7 +258,7 @@ LONG CElanProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 				{// These headers must coincide with the Parser(..);
 					buf.Format("%02x - Unrecognised header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Header sent by ECU", ucRX);
@@ -411,7 +278,7 @@ LONG CElanProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			// Received length
 			m_ucBuffer[1] = ucRX; // Length copied to buffer
 			
-			m_iLen = GetLength(ucRX);
+			m_iLen = CGMBaseFunctions::GetLength(ucRX);
 
 			if (m_iLen == 0)
 			{ // No Data so just read the CRC next time around
@@ -453,13 +320,12 @@ LONG CElanProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			HandleTX(m_ucBuffer, m_iLen + 3);
 
 			// Now Parse it if checksum OK
-			if (CheckChecksum(m_ucBuffer, m_iLen + 3))
-				Parse(m_ucBuffer, m_iLen + 3);
-			else
-			{// may have lost our way, so reset to find header
+			if (CGMBaseFunctions::CheckChecksum(m_ucBuffer, m_iLen + 3)) {
+				updatedEcuData |= m_parser.Parse(m_ucBuffer, m_iLen + 3, ecuData);
+			}
+			else { // may have lost our way, so reset to find header
 				m_bFirstRead = TRUE;
 				WriteStatus("Checksum Error - Not Parsing !!! **** !!! **** !!!");
-				SetTimer(WM_TIMER_EVT1, 200, NULL);
 			}
 
 			m_bReadHeader = TRUE;  // Start all over again... ahhhh
@@ -471,7 +337,8 @@ LONG CElanProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 
 		} // if (m_bReadHeader)
 	} // for (..)
-	return 0;
+
+	return updatedEcuData;
 }
 
 // Receives the buffer and decides what mode commands to send
@@ -651,27 +518,4 @@ void CElanProtocol::OnModeD4(void)
 
 	SendNextCommand();
 	//	TRACE("From OnModeD4 - Mode 4 Data Detected\n");
-}
-
-BOOL CElanProtocol::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext) 
-{
-	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
-}
-
-// This is used to request data from the ECU.
-void CElanProtocol::OnTimer(UINT nIDEvent) 
-{
-	WriteStatus("Timer");
-	KillTimer(WM_TIMER_EVT1);
-	if (!m_bInteract) return; // Don't want to transmit
-
-	WriteStatus("From OnTimer - *** Time Out ***, sending next mode request");
-	
-	return; // action blocked for now
-	
-	m_dwCurrentMode = 1;
-
-	SendNextCommand();
-
-	CWnd::OnTimer(nIDEvent);
 }

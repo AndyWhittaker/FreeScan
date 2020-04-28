@@ -15,7 +15,7 @@
     <SccLocalPath />
     <Keyword>MFCProj</Keyword>
     <ProjectGuid>{D1DDC93D-3507-E8EE-01A1-AF3073C7D24A}</ProjectGuid>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -23,6 +23,7 @@
     <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -59,17 +60,26 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
       <BrowseInformation>true</BrowseInformation>
-      <PrecompiledHeaderOutputFile>.\Debug\FreeScan.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
       <ObjectFileName>.\Debug\</ObjectFileName>
       <ProgramDataBaseFileName>.\Debug\</ProgramDataBaseFileName>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <StringPooling>true</StringPooling>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointExceptions>true</FloatingPointExceptions>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Protocols;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -101,15 +111,23 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <Optimization>MaxSpeed</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\Release\FreeScan.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
       <ObjectFileName>.\Release\</ObjectFileName>
       <ProgramDataBaseFileName>.\Release\</ProgramDataBaseFileName>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Protocols;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -136,9 +154,11 @@
   <ItemGroup>
     <ClCompile Include="font.cpp" />
     <ClCompile Include="picture.cpp" />
+    <ClCompile Include="Protocols\BaseParser.cpp" />
+    <ClCompile Include="Protocols\BaseProtocol.cpp" />
+    <ClCompile Include="Protocols\EcuData.cpp" />
     <ClCompile Include="Protocols\ELM327Parser.cpp" />
     <ClCompile Include="Protocols\ELM327Protocol.cpp" />
-    <ClCompile Include="rbgauge.cpp" />
     <ClCompile Include="DesIdleDlg.cpp" />
     <ClCompile Include="OXToolTipCtrl.cpp" />
     <ClCompile Include="TTPropertyPage.cpp" />
@@ -170,7 +190,6 @@
     <ClCompile Include="About.cpp" />
     <ClCompile Include="HyperLink.cpp" />
     <ClCompile Include="Led.cpp" />
-    <ClCompile Include="MABString.cpp" />
     <ClCompile Include="AdvancedDlg.cpp" />
     <ClCompile Include="DashBoardDlg.cpp" />
     <ClCompile Include="DetailDlg.cpp" />
@@ -182,22 +201,21 @@
     <ClCompile Include="RawMode01.cpp" />
     <ClCompile Include="SensorDlg.cpp" />
     <ClCompile Include="StatusBitsDlg.cpp" />
-    <ClCompile Include="StdAfx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</PrecompiledHeaderFile>
-    </ClCompile>
     <ClCompile Include="TCodesDlg.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="font.h" />
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\vcruntime.h" />
+    <ClInclude Include="BaseDefines.h" />
     <ClInclude Include="picture.h" />
+    <ClInclude Include="Protocols\BaseParser.h" />
+    <ClInclude Include="Protocols\BaseProtocol.h" />
+    <ClInclude Include="Protocols\EcuData.h" />
     <ClInclude Include="Protocols\ELM327Parser.h" />
     <ClInclude Include="Protocols\ELM327Protocol.h" />
-    <ClInclude Include="rbgauge.h" />
     <ClInclude Include="DesIdleDlg.h" />
     <ClInclude Include="OXToolTipCtrl.h" />
+    <ClInclude Include="Protocols\SupervisorInterface.h" />
+    <ClInclude Include="StatusWriter.h" />
     <ClInclude Include="TTPropertyPage.h" />
     <ClInclude Include="EnumSer.h" />
     <ClInclude Include="SerialPort.h" />
@@ -227,7 +245,6 @@
     <ClInclude Include="About.h" />
     <ClInclude Include="HyperLink.h" />
     <ClInclude Include="Led.h" />
-    <ClInclude Include="MABString.h" />
     <ClInclude Include="AdvancedDlg.h" />
     <ClInclude Include="DashBoardDlg.h" />
     <ClInclude Include="DetailDlg.h" />
@@ -275,7 +292,6 @@ makehm IDW_,HIDW_,0x50000 resource.h &gt;&gt;"hlp\$(TargetName).hm" </Command>
     </CustomBuild>
     <ClInclude Include="SensorDlg.h" />
     <ClInclude Include="StatusBitsDlg.h" />
-    <ClInclude Include="StdAfx.h" />
     <ClInclude Include="TCodesDlg.h" />
   </ItemGroup>
   <ItemGroup>

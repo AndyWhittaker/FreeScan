@@ -8,20 +8,20 @@
 **						NOTE: Writing is now not on thread *** ARW ***
 **
 **	CREATION DATE		15-09-1997
-**	LAST MODIFICATION	24-11-1998
+**	LAST MODIFICATION	05-04-2020
 **
 **	AUTHOR				Remon Spekreijse
-**	MODIFIED BY			Brian Koh Sze Hsian - Andy Whittaker
+**	MODIFIED BY			Brian Koh Sze Hsian - Andy Whittaker - Tom Herrmann
 **
 */
 
 // (c) 1996-99 Andy Whittaker, Chester, England. 
 // mail@andywhittaker.com
 
-#include "stdafx.h"
 #include "SerialPort.h"
 #include "EnumSer.h"
 #include <assert.h>
+#include <afxwin.h>
  
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -125,6 +125,9 @@ CSerialPort::CSerialPort()
 	CWinApp* pApp = AfxGetApp();
 	m_nPortNr = pApp->GetProfileInt(_T("Communications"), _T("Port"), 1);
 	m_nWriteDelay = pApp->GetProfileInt(_T("Communications"), _T("WriteDelay"), 100);
+
+	m_timeLastWrittenToPort = { 0 };
+	m_bInitDone = FALSE;
 }
 
 // Delete dynamic memory
@@ -142,15 +145,14 @@ CSerialPort::~CSerialPort()
 		do
 	    {
 	       dwSuspendCount = m_Thread->ResumeThread();
-	    }
-		while((dwSuspendCount != 0) && (dwSuspendCount != 0xffffffff) );
+		}
+		while ((dwSuspendCount != 0) && (dwSuspendCount != 0xffffffff));
 
 		do
-	    {
-	       SetEvent(m_hShutdownEvent);
-	    } 
-		while (m_bThreadAlive);
-	    TRACE(_T("Thread ended\n"));
+		{
+			SetEvent(m_hShutdownEvent);
+		} while (m_bThreadAlive);
+		TRACE(_T("Thread ended\n"));
 	}
 
 	// close handles to avoid memory leaks
@@ -163,7 +165,7 @@ CSerialPort::~CSerialPort()
 	m_hShutdownEvent = NULL;
 
 	if (m_szWriteBuffer != NULL)
-		delete [] m_szWriteBuffer;
+		delete[] m_szWriteBuffer;
 
 	DeleteCriticalSection(&m_csCommunicationSync);
 }
@@ -182,13 +184,13 @@ void CSerialPort::Dump(CDumpContext& dc) const
 //
 // Initialize the port. This can be any Com Port.
 BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (receives message)
-						   UINT  portnr,		// portnumber (e.g. 1..4)
-						   UINT  baud,			// baudrate
-						   char  parity,		// parity 
-						   UINT  databits,		// databits 
-						   UINT  stopbits,		// stopbits 
-						   DWORD dwCommEvents,	// EV_RXCHAR, EV_CTS etc
-						   UINT  writebuffersize)	// size to the writebuffer
+	UINT  portnr,		// portnumber (e.g. 1..4)
+	UINT  baud,			// baudrate
+	char  parity,		// parity 
+	UINT  databits,		// databits 
+	UINT  stopbits,		// stopbits 
+	DWORD dwCommEvents,	// EV_RXCHAR, EV_CTS etc
+	UINT  writebuffersize)	// size to the writebuffer
 {
 	ASSERT(portnr >= 0 && portnr < 15);
 
@@ -202,19 +204,19 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 		m_nPortNr = portnr;
 
 	// Call the 2nd override function
-	return InitPort(pPortOwner,baud,parity,databits,stopbits,dwCommEvents,writebuffersize);
+	return InitPort(pPortOwner, baud, parity, databits, stopbits, dwCommEvents, writebuffersize);
 }
 
 // 2nd over-ride - uses the previous Com port number
 BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (receives message)
-						   UINT  baud,			// baudrate
-						   char  parity,		// parity 
-						   UINT  databits,		// databits 
-						   UINT  stopbits,		// stopbits 
-						   DWORD dwCommEvents,	// EV_RXCHAR, EV_CTS etc
-						   UINT  writebuffersize)	// size to the writebuffer
+	UINT  baud,			// baudrate
+	char  parity,		// parity 
+	UINT  databits,		// databits 
+	UINT  stopbits,		// stopbits 
+	DWORD dwCommEvents,	// EV_RXCHAR, EV_CTS etc
+	UINT  writebuffersize)	// size to the writebuffer
 {
-	BOOL bResult = FALSE;
+	m_bInitDone = FALSE;
 
 	ASSERT(pPortOwner != NULL);
 
@@ -224,14 +226,34 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 
 	if (m_nPortNr < 1)
 	{// This should never happen, however a mistake could have been made in the registry.
-		TRACE(_T("CSerialPort::InitPort - Com Port cannot be 0"));
+		TRACE(_T("CSerialPort::InitPort - Com Port cannot be 0\n"));
 		return FALSE;
 	}
 
 	if (m_nPortNr > 255)
 	{// This should never happen, however a mistake could have been made in the registry.
-		TRACE(_T("CSerialPort::InitPort - Com Port cannot be greater than 255"));
+		TRACE(_T("CSerialPort::InitPort - Com Port cannot be greater than 255\n"));
 		return FALSE;
+	}
+
+	CEnumerateSerial::CPortsArray m_cuPorts;
+	CEnumerateSerial::UsingCreateFile(m_cuPorts);
+	if (m_cuPorts.size() == 0) {
+		TRACE(_T("CSerialPort::InitPort - No Com Ports found\n"));
+		return FALSE;
+	}
+	else {
+		BOOL foundPort = FALSE;
+		for (UINT i = 0; i < m_cuPorts.size(); ++i) {
+			if (m_nPortNr == m_cuPorts[i]) {
+				foundPort = TRUE;
+				break;
+			}
+		}
+		if (foundPort == FALSE) {
+			TRACE(_T("CSerialPort::InitPort - Selected Com Port not found\n"));
+			return FALSE;
+		}
 	}
 
 	// if the thread is alive: Kill
@@ -268,11 +290,13 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 	// set buffersize for writing and save the owner
 	m_pOwner = pPortOwner;
 
+	m_nWriteBufferSize = min(writebuffersize, MAX_WRITE_BUFFER);
+
 	if (m_szWriteBuffer != NULL) // delete the buffer if it exists
 		delete [] m_szWriteBuffer;
-	m_szWriteBuffer = new unsigned char[writebuffersize];
+	m_szWriteBuffer = new unsigned char[m_nWriteBufferSize + 1];
+	memset(m_szWriteBuffer, 0, m_nWriteBufferSize + 1);
 
-	m_nWriteBufferSize = writebuffersize;
 	m_dwCommEvents = dwCommEvents;
 
 	char *szPort = new char[50];
@@ -371,6 +395,8 @@ BOOL CSerialPort::InitPort(CWnd* pPortOwner,	// the owner (CWnd) of the port (re
 
 	TRACE(_T("Initialisation for Com Port %d completed.\n"),
 		m_nPortNr);
+	
+	ftime(&m_timeLastWrittenToPort); // init this to senseble value
 
 	m_bInitDone = TRUE;
 
@@ -391,7 +417,6 @@ UINT CSerialPort::CommThread(LPVOID pParam)
 	port->m_bThreadAlive = TRUE; 
 		
 	// Misc. variables
-	DWORD BytesTransfered = 0; 
 	DWORD Event = 0;
 	DWORD CommEvent = 0;
 	DWORD dwError = 0;
@@ -552,8 +577,10 @@ BOOL CSerialPort::StartMonitoring()
 		return FALSE;
 	}
 	TRACE(_T("Com Port %d starting monitoring.\n"), m_nPortNr);
-	if (!(m_Thread = AfxBeginThread(CommThread, this, THREAD_PRIORITY_NORMAL)))
+	m_Thread = AfxBeginThread(CommThread, this, THREAD_PRIORITY_NORMAL);
+	if (m_Thread == NULL) {
 		return FALSE;
+	}
 	// Clear buffer
 	PurgeComm(m_hComm, PURGE_RXCLEAR | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_TXABORT);
 	TRACE(_T("Thread %ld started\n"), (DWORD)m_Thread->m_nThreadID);
@@ -690,12 +717,6 @@ void CSerialPort::WriteChar(CSerialPort* port)
 		{
 			port->ProcessErrorMessage(_T("GetOverlappedResults() in WriteFile()"));
 		    AfxThrowSerialException();
-
-			if (GetLastError() != ERROR_IO_PENDING)
-			{
-				TRACE(_T("Failed in call to GetOverlappedResult\n"));
-				AfxThrowSerialException();
-			}
 		}	
 	} // end if (!bWrite)
 
@@ -822,37 +843,43 @@ void CSerialPort::ReceiveChar(CSerialPort* port, COMSTAT comstat)
 // Write a string to the port - This can write even NULL characters
 void CSerialPort::WriteToPort(unsigned char* string, int stringlength, BOOL bDelay)
 {	
+	DWORD messageLength = max(stringlength, 0);
+	DWORD halfDelay = max(5, m_nWriteDelay / 2);
+
 	assert(m_hComm != 0);
+
+	if (messageLength > m_nWriteBufferSize) {
+		messageLength = m_nWriteBufferSize;
+	}
 
 	::EnterCriticalSection(&m_csCommunicationSync);
 
-//	memset(m_szWriteBuffer, 0, sizeof(m_szWriteBuffer));
-	if (stringlength > MAX_WRITE_BUFFER)
-		stringlength = MAX_WRITE_BUFFER;
-	for(int i=0;i<stringlength;i++)
-		m_szWriteBuffer[i]=string[i];
-	m_nActualWriteBufferSize=stringlength;
+	memcpy(m_szWriteBuffer, string, messageLength);
+	if (messageLength < m_nWriteBufferSize) {
+		memset(m_szWriteBuffer + messageLength, 0, m_nWriteBufferSize - messageLength);
+	}
+	m_nActualWriteBufferSize=messageLength;
 
 	::LeaveCriticalSection(&m_csCommunicationSync);
 
-	if (bDelay)
-		Sleep(10); // reduces stress on ECU serial port.
+	if (bDelay) { // sleep to reduce stress on ECU serial port.
+		struct timeb currentTime = { 0 };
+		ftime(&currentTime);
+	
+		time_t timeSinceLastWrite = ((currentTime.time - m_timeLastWrittenToPort.time) * 1000) + (currentTime.millitm - m_timeLastWrittenToPort.millitm);
+		if (timeSinceLastWrite < 0) {
+			// overflow...
+			Sleep(halfDelay);
+		}
+		else if (timeSinceLastWrite < halfDelay) {
+			Sleep((DWORD) (halfDelay - timeSinceLastWrite));
+		}
+	}
 	WriteChar(this); // Write to port immediately
-	if (bDelay)
-		Sleep(m_nWriteDelay); // reduces stress on ECU serial port.
-}
-
-// Write a string to the port ** Caution - May be broken
-void CSerialPort::WriteToPort(unsigned char* string)
-{		
-	assert(m_hComm != 0);
-
-	memset(m_szWriteBuffer, 0, sizeof(m_szWriteBuffer));
-	strcpy_s((char *) m_szWriteBuffer, sizeof(m_szWriteBuffer), (char *)string);
-
-	m_nActualWriteBufferSize=strlen((char*)m_szWriteBuffer) ? strlen((char*)m_szWriteBuffer) : 1;
-		
-	WriteChar(this); // Write to port immediately
+	if (bDelay) { // sleep to reduce stress on ECU serial port.
+		Sleep(halfDelay);
+	}
+	ftime(&m_timeLastWrittenToPort);
 }
 
 // Returns the device control block

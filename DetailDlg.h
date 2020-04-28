@@ -1,31 +1,33 @@
 #if !defined(AFX_DETAILDLG_H__09BF9084_1326_11D2_983E_00E018900F2A__INCLUDED_)
 #define AFX_DETAILDLG_H__09BF9084_1326_11D2_983E_00E018900F2A__INCLUDED_
 
-#include "MABString.h"	// Added by ClassView
 #if _MSC_VER >= 1000
 #pragma once
 #endif // _MSC_VER >= 1000
-// DetailDlg.h : header file
-//
+
+#include "BaseDefines.h"
+
+#include <afxwin.h>
+#include <EnumSer.h>
 
 #include "TTPropertyPage.h" // Our Tooltip Class
-#include "EnumSer.h"
-class CSupervisor;
+#include "EcuData.h"
+#include "StatusWriter.h"
+#include "SupervisorInterface.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CDetailDlg dialog
-class CFreeScanDlg;
 
 class CDetailDlg : public CTTPropertyPage
 {
-	DECLARE_DYNCREATE(CDetailDlg)
 
 // Construction
 public:
-	CDetailDlg();
+	CDetailDlg(CStatusWriter* pStatusWriter);
 	~CDetailDlg();
 
 // Dialog Data
+private:
 	//{{AFX_DATA(CDetailDlg)
 	enum { IDD = IDD_DETAIL };
 	CComboBox	m_WriteDelay;
@@ -48,8 +50,9 @@ public:
 	CButton	m_Interact;
 	//}}AFX_DATA
 
-	CFreeScanDlg*	m_pMainDlg; // Base Dialog Pointer.
-protected:
+	CStatusWriter* const m_pStatusWriter;
+	CSupervisorInterface* m_pSupervisor;
+
 //	CUIntArray m_cuPorts; // Stores the enumerated COM Port numbers
 	CEnumerateSerial::CPortsArray m_cuPorts; // Stores the enumerated COM Port numbers
 	CEnumerateSerial m_EnumSerial;//ARW 11/06/2019 New EnumSerial Class
@@ -60,24 +63,17 @@ protected:
 // Overrides
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(CDetailDlg)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
 // Implementation
-protected:
-	void WriteStatus(CString csText);
-	void WriteASCII(unsigned char * buffer, int ilength);
 public:
-	void Refresh(void);
+	void Refresh(const CEcuData* const ecuData);
 	void Init(void);
+	void RegisterSupervisor(CSupervisorInterface* const pSupervisor);
 
-protected:
-	CSupervisor* GetSupervisor(void); // returns a pointer to the Supervisor
-	CSupervisor* GetData(void); // return a pointer to the Data
-	BOOL GetInteract(void);// Returns if the ECU is interactive
-	BOOL GetCentigrade(void); // Returns if FreeScan is in Metric
-	BOOL GetMiles(void); // Returns if FreeScan is in Metric
+private:
 	void Enumerate(void); //Finds this computer's serial ports
 	// Generated message map functions
 	//{{AFX_MSG(CDetailDlg)

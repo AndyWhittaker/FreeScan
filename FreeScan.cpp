@@ -4,7 +4,6 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
 #include "FreeScan.h"
 #include "MainDlg.h"
 
@@ -44,47 +43,6 @@ CFreeScanApp theApp;
 
 BOOL CFreeScanApp::InitInstance()
 {
-// Find out what version of Windows we are running on.
-    OSVERSIONINFO version;
-
-	memset(&version, 0, sizeof(version));
-
-        // must set size of structure
-    version.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        // get version data (NOTE: This is depreciated now)
-		// Project Properties > Configuration Properties > C/C++ > General > SDL checks [set to No]			
-    if (!GetVersionEx(&version))
-    {
-		CString s;
-        s.Format(_T("Error getting Version Info: %d"), GetLastError());
-		AfxMessageBox(s, MB_ICONSTOP | MB_OK);
-        return FALSE;
-    }
-
-    switch(version.dwPlatformId)
-    {
-        case VER_PLATFORM_WIN32_NT:
-//            AfxMessageBox("----->Windows NT\n");
-            break;
-        case VER_PLATFORM_WIN32_WINDOWS :
-//            AfxMessageBox("----->Windows95\n");
-            break;
-        case VER_PLATFORM_WIN32s:
-                // Not supported
-            AfxMessageBox(_T("Sorry, Windows 3.1 Win32s is not supported by FreeScan"), MB_ICONSTOP | MB_OK);
-			return FALSE;
-            break;
-        default:
-			{
-			char szBuffer[100];
-            sprintf_s(szBuffer, _T("Untested Win32 Version: %d\nFreeScan may not run correctly\nPlease Email mail@andywhittaker.com with this error."), version.dwPlatformId);
-			AfxMessageBox(szBuffer, MB_ICONEXCLAMATION | MB_OK);
-			//return FALSE;
-			}
-    }            
-
-	AfxEnableControlContainer(); // For ActiveX Controls
-
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size
 	//  of your final executable, you should remove from the following

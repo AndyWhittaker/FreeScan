@@ -4,32 +4,22 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// GM1993CamaroZ28Protocol.h : header file
-//
 
-/////////////////////////////////////////////////////////////////////////////
-// CGM1993CamaroZ28Protocol window
+#include "BaseDefines.h"
 
+#include "BaseProtocol.h"
 #include "GM1993CamaroZ28Parser.h"
+#include "StatusWriter.h"
 
-#include "..\SerialPort.h"
-
-#define ECU_HEADER_GM1993CAMAROZ28				0xf4
-#define ECU_CHATTER_HEADER_GM1993CAMAROZ28		0xf0
-
-class CGM1993CamaroZ28Protocol : public CGM1993CamaroZ28Parser
+class CGM1993CamaroZ28Protocol : public CBaseProtocol
 {
 // Construction
 public:
-	CGM1993CamaroZ28Protocol();
+	CGM1993CamaroZ28Protocol(CStatusWriter* pStatusWriter, CSupervisorInterface* pSupervisor, BOOL bInteract);
 	virtual ~CGM1993CamaroZ28Protocol();
 
-// Attributes
-public:
-	CString			m_csComment; // The developer's comment for this protocol
-	
-protected:
-	CSerialPort*	m_pcom; // Our com port object pointer of the Supervisor
+private:
+	CGM1993CamaroZ28Parser	m_parser;
 	DWORD			m_dwCurrentMode; // Current ECU mode
 	DWORD			m_dwRequestedMode; // Mode we want next
 	unsigned char	m_ucData; // data for ECU, e.g. Desired Idle
@@ -43,27 +33,18 @@ protected:
 	BOOL			m_bReadLength;
 	BOOL			m_bReadData;
 	BOOL			m_bReadCRC;
-	BOOL			m_bInteract; // for sending mode requests to ECU
 	BOOL			m_bSentOnce; // test for send
 	unsigned char	m_ucBuffer[400]; // Packet Temporary Buffer
 
-// Operations
-public:
-
-// Overrides
-	// ClassWizard generated virtual function overrides
-	//{{AFX_VIRTUAL(CGM1993CamaroZ28Protocol)
-	public:
-	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
-	//}}AFX_VIRTUAL
-//	virtual BOOL Create(CWnd* pParentWnd);
-
 // Implementation
 public:
-	HWND Init(CSupervisor* pSupervisor, CSerialPort* pcom, CWnd* pParentWnd, CStatusDlg* pStatusDlg);// Initialises GM1993CamaroZ28Protocol
+	void Reset(void);
+	void SetECUMode(const DWORD dwMode, const unsigned char data);
+	DWORD GetCurrentMode(void);
+	void ForceDataFromECU(void);
+	BOOL OnCharsReceived(const unsigned char* const buffer, const DWORD bytesRead, CEcuData* const ecuData);
 
-protected:
-	void PumpMessages(void);
+private:
 	BOOL SendIdle(void); // Sends idle message to get bus
 	BOOL SendModeShutUp(void); // Tell ECU to stop chattering packets
 	BOOL SendMode1_0(void); // Tell ECU to send Mode 1 message 0 packets
@@ -78,8 +59,6 @@ protected:
 	BOOL SetDesiredIdle(unsigned char DesIdle); // sets the desired idle
 	void SendNextCommand(void); // Sends the required command to ECU
 	int HandleTX(unsigned char* buffer, int iLength);
-	void WriteToECU(unsigned char* string,int stringlength, BOOL bDelay = TRUE);
-	BOOL CreateProtocolWnd(CWnd* pParentWnd);
 
 	void OnIdle(void);
 	void OnModeShutUp(void);
@@ -99,20 +78,9 @@ protected:
 	void OnMode4(void);
 	void OnModeD4(void);
 	void OnMode10(void);
-	// Generated message map functions
+
 protected:
-	//{{AFX_MSG(CGM1993CamaroZ28Protocol)
-		// NOTE - the ClassWizard will add and remove member functions here.
-	afx_msg LONG OnResetStateMachine(WPARAM wdummy, LPARAM dummy);
-	afx_msg LONG OnInteract(WPARAM bInteract, LPARAM dummy);
-	afx_msg LONG OnGetInteract(WPARAM wdummy, LPARAM dummy);
-	afx_msg LONG OnGetCurrentMode(WPARAM wdummy, LPARAM dummy);
-	afx_msg LONG OnForceShutUp(WPARAM wdummy, LPARAM dummy);
-	afx_msg LONG OnECUMode(WPARAM dwMode, LPARAM Data = 0);
-	afx_msg LONG OnStartCSV(WPARAM bStart, LPARAM dummy);
-	afx_msg LONG OnCharReceived(WPARAM ch, LPARAM port);
-	//}}AFX_MSG
-	DECLARE_MESSAGE_MAP()
+	void InitializeSupportedValues(CEcuData* const ecuData);
 };
 
 /////////////////////////////////////////////////////////////////////////////

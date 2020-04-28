@@ -9,49 +9,39 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "GMBaseFunctions.h"
+#include "BaseDefines.h"
+
+#include "BaseParser.h"
+#include "BaseProtocol.h"
 
 #define ECU_HEADER_GMA160				0xf0
 #define ECU_CHATTER_HEADER_GMA160		0xf0
 
-class CSupervisor;
-class CGMA160Parser : public CGMBaseFunctions
+class CGMA160Parser : public CBaseParser
 {
 public:
-	CGMA160Parser();
+	CGMA160Parser(CBaseProtocol* const pProtocol);
 	virtual ~CGMA160Parser();
 
-	
-	int Parse(unsigned char*, int iLength);
+	void InitializeSupportedValues(CEcuData* const ecuData);
+	BOOL Parse(const unsigned char* const buffer, int const length, CEcuData* const ecuData);
 
-protected:
-	// Protected pointers
-	CSupervisor*	m_pSupervisor; // pointer to the owner.
+private:
 	unsigned char	m_ucDTC[3]; // Fault codes buffer
 
-protected:
+private:
 	//Implementation
-	void ParseMode0A(unsigned char* buffer, int len);
-	void ParseMode90(unsigned char* buffer, int len);
-	void ParseMode1_0(unsigned char* buffer, int len);
-	void ParseMode2(unsigned char* buffer, int len);
-	void ParseMode3(unsigned char* buffer, int len);
-	void ParseMode4(unsigned char* buffer, int len);
-	void ParseMode7(unsigned char* buffer, int len);
-	void ParseMode8(unsigned char* buffer, int len);
-	void ParseMode9(unsigned char* buffer, int len);
-	void ParseMode10(unsigned char* buffer, int len);
-	void ParseDTCs(void);// Parse the DTCs
-
-	// CSV Logging
-	BOOL StartCSVLog(BOOL bStart);// Starts or stops csv logging to file
-	CStdioFile	m_file;// File class for logging to disk
-	CString		m_csCSVLogFile;// Filename for CSV logging
-	DWORD		m_dwCSVRecord;//CSV record number
-
-	void WriteCSV(BOOL bTitle);//Write CSV data to disk
-
-	void UpdateDialog(void);// forces dialog to be updated
+	BOOL ParseMode0A(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode90(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode1_0(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode2(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode3(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode4(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode7(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode8(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode9(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode10(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	void ParseDTCs(CEcuData *const ecuData);// Parse the DTCs
 };
 
 #endif // !defined(AFX_GMA160PARSER_H__19F33D4B_4031_11D3_9828_0080C83832F8__INCLUDED_)

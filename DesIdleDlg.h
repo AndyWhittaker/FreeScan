@@ -4,8 +4,21 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// DesIdleDlg.h : header file
-//
+
+#include "BaseDefines.h"
+
+#include <afxwin.h>
+#include <afxext.h>
+
+#ifndef _AFX_NO_OLE_SUPPORT
+#include <afxdtctl.h>          // MFC support for Internet Explorer 4 Common Controls
+#endif
+
+#ifndef _AFX_NO_AFXCMN_SUPPORT
+#include <afxcmn.h>                    // MFC support for Windows Common Controls
+#endif // _AFX_NO_AFXCMN_SUPPORT
+
+#include "resource.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CDesIdleDlg dialog

@@ -4,38 +4,26 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// LotusCarltonProtocol.h : header file
-//
 
-/////////////////////////////////////////////////////////////////////////////
-// CLotusCarltonProtocol window
+#include "BaseDefines.h"
 
+#include "BaseProtocol.h"
 #include "LotusCarltonParser.h"
+#include "StatusWriter.h"
 
-#include "..\SerialPort.h"
-
-#define		WM_TIMER_EVT1	0
-
-#define ECU_HEADER_LotusCarlton				0xf4
-
-class CLotusCarltonProtocol : public CLotusCarltonParser
+class CLotusCarltonProtocol : public CBaseProtocol
 {
 // Construction
 public:
-	CLotusCarltonProtocol();
+	CLotusCarltonProtocol(CStatusWriter* pStatusWriter, CSupervisorInterface* pSupervisor, BOOL bInteract);
 	virtual ~CLotusCarltonProtocol();
-
-// Attributes
-public:
-	CString			m_csComment; // The developer's comment for this protocol
 	
-protected:
-	CSerialPort*	m_pcom; // Our com port object pointer of the Supervisor
+private:
+	CLotusCarltonParser	m_parser;
 	DWORD			m_dwCurrentMode; // Current ECU mode
 	DWORD			m_dwRequestedMode; // Mode we want next
 	unsigned char	m_ucData; // data for ECU, e.g. Desired Idle
 	BOOL			m_bModeDone; // Have we sent our mode request?
-//	int				m_iIdleCount;
 	int				m_iShutUpCount;
 	BOOL			m_bFirstRead; // First time reading ECU. Synchonises F0 byte
 	BOOL			m_bReadHeader;
@@ -44,28 +32,20 @@ protected:
 	BOOL			m_bReadLength;
 	BOOL			m_bReadData;
 	BOOL			m_bReadCRC;
-	BOOL			m_bInteract; // for sending mode requests to ECU
 	BOOL			m_bSentOnce; // test for send
 	BOOL			m_bTimeOut; // Timeout
 	unsigned char	m_ucBuffer[400]; // Packet Temporary Buffer
 
-// Operations
-public:
-
-// Overrides
-	// ClassWizard generated virtual function overrides
-	//{{AFX_VIRTUAL(CLotusCarltonProtocol)
-	public:
-	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
-	//}}AFX_VIRTUAL
-//	virtual BOOL Create(CWnd* pParentWnd);
-
 // Implementation
 public:
-	HWND Init(CSupervisor* pSupervisor, CSerialPort* pcom, CWnd* pParentWnd, CStatusDlg* pStatusDlg);// Initialises LotusCarltonProtocol
+	void Reset(void);
+	void SetECUMode(const DWORD dwMode, const unsigned char data);
+	DWORD GetCurrentMode(void);
+	void ForceDataFromECU(void);
+	BOOL OnCharsReceived(const unsigned char* const buffer, const DWORD bytesRead, CEcuData* const ecuData);
+	DWORD GetTimeoutForPingDuringInteract(void);
 
 protected:
-	void PumpMessages(void);
 	BOOL SendIdle(void); // Sends idle message to get bus
 	BOOL SendModeShutUp(void); // Tell ECU to shut-up
 	BOOL SendMode0(void); // Tell ECU to send Mode 0 packets
@@ -77,8 +57,6 @@ protected:
 	BOOL SetDesiredIdle(unsigned char DesIdle); // sets the desired idle
 	void SendNextCommand(void); // Sends the required command to ECU
 	int HandleTX(unsigned char* buffer, int iLength);
-	void WriteToECU(unsigned char* string,int stringlength, BOOL bDelay = TRUE);
-	BOOL CreateProtocolWnd(CWnd* pParentWnd);
 
 	void OnIdle(void);
 	void OnModeShutUp(void);
@@ -92,20 +70,9 @@ protected:
 	void OnMode4(void);
 	void OnModeD4(void);
 
-// Generated message map functions
 protected:
-	//{{AFX_MSG(CLotusCarltonProtocol)
-	afx_msg LONG OnResetStateMachine(WPARAM wdummy, LPARAM dummy);
-	afx_msg LONG OnInteract(WPARAM bInteract, LPARAM dummy);
-	afx_msg LONG OnGetInteract(WPARAM wdummy, LPARAM dummy);
-	afx_msg LONG OnGetCurrentMode(WPARAM wdummy, LPARAM dummy);
-	afx_msg LONG OnForceShutUp(WPARAM wdummy, LPARAM dummy);
-	afx_msg LONG OnECUMode(WPARAM dwMode, LPARAM Data = 0);
-	afx_msg LONG OnStartCSV(WPARAM bStart, LPARAM dummy);
-	afx_msg LONG OnCharReceived(WPARAM ch, LPARAM port);
-	afx_msg void OnTimer(UINT nIDEvent);
-	//}}AFX_MSG
-	DECLARE_MESSAGE_MAP()
+	void InitializeSupportedValues(CEcuData* const ecuData);
+	void OnTimer(void);
 };
 
 /////////////////////////////////////////////////////////////////////////////

@@ -1,21 +1,31 @@
-//{{AFX_INCLUDES()
-#include "rbgauge.h"
-//}}AFX_INCLUDES
+
 #if !defined(AFX_DashBoardDlg_H__CB945454_6752_11D3_1234_0080C83832F8__INCLUDED_)
 #define AFX_DashBoardDlg_H__CB945664_6752_11D3_1234_0080C83832F8__INCLUDED_
 
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// DashBoardDlg.h : header file
-//
+
+#include "BaseDefines.h"
+
+#include <afxwin.h>
+#include <afxext.h>
+
+#ifndef _AFX_NO_OLE_SUPPORT
+#include <afxdtctl.h>          // MFC support for Internet Explorer 4 Common Controls
+#endif
+
+#ifndef _AFX_NO_AFXCMN_SUPPORT
+#include <afxcmn.h>                    // MFC support for Windows Common Controls
+#endif // _AFX_NO_AFXCMN_SUPPORT
 
 #include "TTPropertyPage.h" // Our Tooltip Class
+#include "EcuData.h"
+#include "SupervisorInterface.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CDashBoardDlg dialog
 class CFreeScanDlg;
-class CSupervisor;
 
 class CDashBoardDlg : public CTTPropertyPage
 {
@@ -27,53 +37,53 @@ public:
 	~CDashBoardDlg();
 
 // Dialog Data
+private:
 	//{{AFX_DATA(CDashBoardDlg)
 	enum { IDD = IDD_DASHBOARD };
 	CProgressCtrl	m_Throttle;
-	CRBGauge	m_Boost;
-	CRBGauge	m_MAT;
-	CRBGauge	m_Speedo;
-	CRBGauge	m_Tacho;
-	CRBGauge	m_Water;
-	CRBGauge	m_Volt;
-	CRBGauge	m_Spark;
+	CProgressCtrl	m_EngineLoad;
+	CProgressCtrl	m_Boost;
+	CEdit			m_BoostText;
+	CProgressCtrl	m_MAT;
+	CEdit			m_MATText;
+	CProgressCtrl	m_Speedo;
+	CEdit			m_SpeedoMphText;
+	CEdit			m_SpeedoKphText;
+	CProgressCtrl	m_Tacho;
+	CEdit			m_TachoText;
+	CProgressCtrl	m_AirFuelRatio;
+	CEdit			m_AirFuelRatioText;
+	CProgressCtrl	m_Water;
+	CEdit			m_WaterText;
+	CProgressCtrl	m_Volt;
+	CEdit			m_VoltText;
+	CProgressCtrl	m_Spark;
+	CEdit			m_SparkText;
 	//}}AFX_DATA
 
-	CFreeScanDlg*	m_pMainDlg; // Base Dialog Pointer.
+	CBrush m_brush; // For our background colour
 
-protected:
-	// Variables store to reduce unnecessary updates
-	float	m_fWaterTemp;
-	float	m_fMATTemp;
-	float	m_fBatteryVolts;
+	CSupervisorInterface* m_pSupervisor;
 
 // Overrides
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(CDashBoardDlg)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
-	CBrush m_brush; // For our background colour
-
 // Implementation
 public:
-	void Refresh(void); // Updates all of our controls
-protected:
-	CSupervisor* GetSupervisor(void); // returns a pointer to the Supervisor
-	CSupervisor* GetData(void); // return a pointer to the Data
-	BOOL GetInteract(void);
-	DWORD GetCurrentMode(void); // Returns the current ECU Mode
+	void Refresh(const CEcuData* const ecuData); // Updates all of our controls
+	void RegisterSupervisor(CSupervisorInterface* const pSupervisor);
 
+private:
 	// Generated message map functions
 	//{{AFX_MSG(CDashBoardDlg)
 	virtual BOOL OnInitDialog();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
-
-public:
-	afx_msg void OnNMCustomdrawThrot(NMHDR *pNMHDR, LRESULT *pResult);
 };
 
 //{{AFX_INSERT_LOCATION}}

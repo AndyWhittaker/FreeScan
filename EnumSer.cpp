@@ -218,7 +218,6 @@ to maintain a single distribution point for the source code.
 
 /////////////////////////////////  Includes  //////////////////////////////////
 
-#include "stdafx.h"
 #include "enumser.h"
 
 
@@ -242,16 +241,8 @@ to maintain a single distribution point for the source code.
 #endif //#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2) || !defined(NO_CENUMERATESERIAL_USING_REGISTRY)
 
 #ifndef NO_CENUMERATESERIAL_USING_WMI
-  #ifndef __IWbemLocator_FWD_DEFINED__
-    #pragma message("To avoid this message, please put WBemCli.h in your pre compiled header (normally stdafx.h)")
-    #include <WbemCli.h>
-  #endif //#ifndef __IWbemLocator_FWD_DEFINED__
-  
-  #ifndef _INC_COMDEF
-    #pragma message("To avoid this message, please put comdef.h in your pre compiled header (normally stdafx.h)")
-    #include <comdef.h>
-  #endif //#ifndef _INC_COMDEF
-    
+  #include <WbemCli.h>
+  #include <comdef.h>    
   #pragma comment(lib, "WbemUuid.lib")
 #endif //#ifndef NO_CENUMERATESERIAL_USING_WMI
 

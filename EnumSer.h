@@ -32,38 +32,21 @@ to maintain a single distribution point for the source code.
 
 ///////////////////////// Includes ////////////////////////////////////////////
 
-#ifndef __ATLBASE_H__
-#pragma message("To avoid this message, please put atlbase.h in your pre compiled header (normally stdafx.h)")
 #include <atlbase.h>
-#endif //#ifndef __ATLBASE_H__
-
-#ifndef _VECTOR_
-#pragma message("To avoid this message, please put vector in your pre compiled header (normally stdafx.h)")
 #include <vector>
-#endif //#ifndef _VECTOR_
-
-#ifndef _STRING_
-#pragma message("To avoid this message, please put string in your pre compiled header (normally stdafx.h)")
 #include <string>
-#endif //#ifndef _STRING_
+#include <msports.h>
+#include <setupapi.h>
 
 #ifndef _UTILITY_
 #pragma message("To avoid this message, please put utility in your pre compiled header (normally stdafx.h)")
 #include <utility>
 #endif //#ifndef _UTILITY_
 
-#ifndef __ATLSTR_H__
-#pragma message("To avoid this message, please put atlstr.h in your pre compiled header (normally stdafx.h)")
 #include <atlstr.h>
-#endif //#ifndef __ATLSTR_H__
 
 #if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
 #include <winioctl.h>
-
-#ifndef _INC_SETUPAPI
-#pragma message("To avoid this message, please put setupapi.h in your pre compiled header (normally stdafx.h)")
-#include <setupapi.h>
-#endif //#ifndef _INC_SETUPAPI
 
 #endif //#if !defined(NO_CENUMERATESERIAL_USING_SETUPAPI1) || !defined(NO_CENUMERATESERIAL_USING_SETUPAPI2)
 

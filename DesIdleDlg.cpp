@@ -3,8 +3,6 @@
 // (c) 1996-99 Andy Whittaker, Chester, England. 
 // mail@andywhittaker.com
 
-#include "stdafx.h"
-#include "FreeScan.h"
 #include "DesIdleDlg.h"
 
 #ifdef _DEBUG

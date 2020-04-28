@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 FreeScan was written by Andy Whittaker - mail@andywhittaker.com
+modified by Tom Herrmann https://randoom.org/
 
 Macclesfield, United Kingdom.
 

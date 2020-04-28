@@ -4,11 +4,6 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "FreeScan.h"
-#include "MainDlg.h"
-#include "Supervisor.h"
-
 #include "RawMode00.h"
 
 #ifdef _DEBUG
@@ -27,7 +22,7 @@ CRawMode00::CRawMode00() : CPropertyPage(CRawMode00::IDD)
 	//{{AFX_DATA_INIT(CRawMode00)
 	//}}AFX_DATA_INIT
 
-	m_pMainDlg = NULL;
+	m_pSupervisor = NULL;
 }
 
 CRawMode00::~CRawMode00()
@@ -54,9 +49,10 @@ void CRawMode00::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 	
 	//Updates the dialog.
-	Refresh();
+	if (m_pSupervisor != NULL) {
+		Refresh(m_pSupervisor->GetEcuData());
+	}
 }
-
 
 BEGIN_MESSAGE_MAP(CRawMode00, CPropertyPage)
 	//{{AFX_MSG_MAP(CRawMode00) 
@@ -65,45 +61,49 @@ BEGIN_MESSAGE_MAP(CRawMode00, CPropertyPage)
 END_MESSAGE_MAP()
 
 
-// Returns a pointer to the Supervisor
-CSupervisor* CRawMode00::GetSupervisor(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
-
 // Updates all of our controls
-void CRawMode00::Refresh(void)
+void CRawMode00::Refresh(const CEcuData* const ecuData)
 {
 	CString buf;
 
-	buf.Format("%02X", GetSupervisor()->m_ucF005[0]);
+	unsigned char ucF005[10] = { 0 };
+	unsigned char ucF00A[3] = { 0 };
+
+	ecuData->copyFromF005(ucF005, sizeof(ucF005));
+	ecuData->copyFromF00A(ucF00A, sizeof(ucF00A));
+
+	buf.Format("%02X", ucF005[0]);
 	m_05_db00.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[1]);
+	buf.Format("%02X", ucF005[1]);
 	m_05_db01.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[2]);
+	buf.Format("%02X", ucF005[2]);
 	m_05_db02.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[3]);
+	buf.Format("%02X", ucF005[3]);
 	m_05_db03.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[4]);
+	buf.Format("%02X", ucF005[4]);
 	m_05_db04.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[5]);
+	buf.Format("%02X", ucF005[5]);
 	m_05_db05.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[6]);
+	buf.Format("%02X", ucF005[6]);
 	m_05_db06.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[7]);
+	buf.Format("%02X", ucF005[7]);
 	m_05_db07.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[8]);
+	buf.Format("%02X", ucF005[8]);
 	m_05_db08.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF005[9]);
+	buf.Format("%02X", ucF005[9]);
 	m_05_db09.SetWindowText(buf);
 	
-	buf.Format("%02X", GetSupervisor()->m_ucF00A[0]);
+	buf.Format("%02X", ucF00A[0]);
 	m_0a_db00.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF00A[1]);
+	buf.Format("%02X", ucF00A[1]);
 	m_0a_db01.SetWindowText(buf);
-	buf.Format("%02X", GetSupervisor()->m_ucF00A[2]);
+	buf.Format("%02X", ucF00A[2]);
 	m_0a_db02.SetWindowText(buf);
 
+}
+
+void CRawMode00::RegisterSupervisor(CSupervisorInterface* const pSupervisor) {
+	m_pSupervisor = pSupervisor;
 }
 
 	/////////////////////////////////////////////////////////////////////////////

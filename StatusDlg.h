@@ -4,10 +4,13 @@
 #if _MSC_VER >= 1000
 #pragma once
 #endif // _MSC_VER >= 1000
-// StatusDlg.h : header file
-//
+
+#include "BaseDefines.h"
+
+#include <afxwin.h>
 
 #include "resource.h"
+#include "StatusWriter.h"
 
 #ifndef _countof
 #define _countof(array) (sizeof(array)/sizeof(array[0]))
@@ -16,7 +19,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // CStatusDlg dialog
 
-class CStatusDlg : public CDialog
+class CStatusDlg : public CDialog, public CStatusWriter
 {
 // Construction
 public:
@@ -25,11 +28,11 @@ public:
 
 	void WriteStatus(CString csText);
 	void WriteStatusTimeLogged(CString csText);
-	void WriteASCII(unsigned char * buffer, int ilength);
+	void WriteASCII(const unsigned char* const buffer, int ilength);
 	void WriteLogEntry(LPCTSTR pstrFormat, ...);
 	BOOL StartLog(BOOL bStart);
 	void Hide(BOOL yes);
-	BOOL HideStatus(void);
+	BOOL IsHidden(void);
 	void PumpMessages(void);
 	void PrintRect(LPRECT lpR);
 

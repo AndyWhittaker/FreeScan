@@ -175,6 +175,10 @@ Source code files:
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "BaseDefines.h"
+
+#include <afxwin.h>
+
 //#include "OXDllExt.h"
 
 class COXToolTipInfo;

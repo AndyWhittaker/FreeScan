@@ -4,15 +4,16 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// StatusBitsDlg.h : header file
-//
 
-/////////////////////////////////////////////////////////////////////////////
-// CStatusBitsDlg dialog
-class CFreeScanDlg;
-class CSupervisor;
+#include "BaseDefines.h"
 
+#include <afxwin.h>
+#include <afxdlgs.h>
+
+#include "EcuData.h"
+#include "SupervisorInterface.h"
 #include "Led.h"
+#include "resource.h"
 
 class CStatusBitsDlg : public CPropertyPage
 {
@@ -24,6 +25,7 @@ public:
 	~CStatusBitsDlg();
 
 // Dialog Data
+private:
 	//{{AFX_DATA(CStatusBitsDlg)
 	enum { IDD = IDD_STATUSBITS };
 	CLed	m_led3;
@@ -31,23 +33,21 @@ public:
 	CLed	m_led1;
 	//}}AFX_DATA
 
-	CFreeScanDlg*	m_pMainDlg; // Base Dialog Pointer.
-
-	void Refresh(void);
-protected:
-	BOOL GetInteract(void);// Returns if the ECU is interactive
+	CSupervisorInterface* m_pSupervisor;
 
 // Overrides
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(CStatusBitsDlg)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
+public:
+	void Refresh(const CEcuData* const ecuData);
+	void RegisterSupervisor(CSupervisorInterface* const pSupervisor);
+
 // Implementation
-protected:
-	CSupervisor* GetSupervisor(void); // returns a pointer to the Supervisor
-	CSupervisor* GetData(void); // return a pointer to the Data
+private:
 	// Generated message map functions
 	//{{AFX_MSG(CStatusBitsDlg)
 	//}}AFX_MSG

@@ -3,11 +3,6 @@
 // (c) 1996-99 Andy Whittaker, Chester, England. 
 // mail@andywhittaker.com
 
-#include "stdafx.h"
-#include "FreeScan.h"
-#include "MainDlg.h"
-#include "Supervisor.h"
-
 #include "StatusBitsDlg.h"
 
 #ifdef _DEBUG
@@ -25,7 +20,7 @@ CStatusBitsDlg::CStatusBitsDlg() : CPropertyPage(CStatusBitsDlg::IDD)
 {
 	//{{AFX_DATA_INIT(CStatusBitsDlg)
 	//}}AFX_DATA_INIT
-	m_pMainDlg = NULL;
+	m_pSupervisor = NULL;
 }
 
 CStatusBitsDlg::~CStatusBitsDlg()
@@ -42,25 +37,9 @@ void CStatusBitsDlg::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 
 	//Updates the dialog.
-	Refresh();
-}
-
-// Returns a pointer to the Supervisor
-CSupervisor* CStatusBitsDlg::GetSupervisor(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
-
-// Returns a pointer to the Supervisor
-CSupervisor* CStatusBitsDlg::GetData(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
-
-// Returns if the ECU is interactive
-BOOL CStatusBitsDlg::GetInteract(void)
-{
-	return GetSupervisor()->GetInteract();
+	if (m_pSupervisor != NULL) {
+		Refresh(m_pSupervisor->GetEcuData());
+	}
 }
 
 BEGIN_MESSAGE_MAP(CStatusBitsDlg, CPropertyPage)
@@ -71,23 +50,27 @@ END_MESSAGE_MAP()
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 // Updates all of our controls
-void CStatusBitsDlg::Refresh(void)
+void CStatusBitsDlg::Refresh(const CEcuData* const ecuData)
 {
-	if (GetData()->m_bACRequest)
+	if (ecuData->m_bACRequest == TRUE)
 		m_led1.SetLed(CLed::LED_COLOR_RED,CLed::LED_ON,CLed::LED_ROUND);
 	else
 		m_led1.SetLed(CLed::LED_COLOR_RED,CLed::LED_OFF,CLed::LED_ROUND);
 
-	if (GetData()->m_bACClutch)
+	if (ecuData->m_bACClutch == TRUE)
 		m_led2.SetLed(CLed::LED_COLOR_RED,CLed::LED_ON,CLed::LED_ROUND);
 	else
 		m_led2.SetLed(CLed::LED_COLOR_RED,CLed::LED_OFF,CLed::LED_ROUND);
 
-	if (GetData()->m_bEngineClosedLoop)
+	if (ecuData->m_bEngineClosedLoop == TRUE)
 		m_led3.SetLed(CLed::LED_COLOR_RED,CLed::LED_ON,CLed::LED_ROUND);
 	else
 		m_led3.SetLed(CLed::LED_COLOR_RED,CLed::LED_OFF,CLed::LED_ROUND);
 //	m_led1.SetLed(CLed::LED_COLOR_RED,CLed::LED_DISABLED,CLed::LED_ROUND);
+}
+
+void CStatusBitsDlg::RegisterSupervisor(CSupervisorInterface* const pSupervisor) {
+	m_pSupervisor = pSupervisor;
 }
 
 /////////////////////////////////////////////////////////////////////////////

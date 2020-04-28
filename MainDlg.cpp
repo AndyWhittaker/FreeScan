@@ -4,9 +4,8 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "FreeScan.h"
 #include "MainDlg.h"
+
 #include "StatusDlg.h"
 #include "Supervisor.h"
 
@@ -26,8 +25,6 @@ CFreeScanDlg::CFreeScanDlg(UINT nIDCaption, CWnd* pParentWnd, UINT iSelectPage)
 {
 	AllocateAndAddPages();
 
-	m_bHasRun = FALSE;
-
 	// Note that LoadIcon does not require a subsequent DestroyIcon in Win32
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -36,8 +33,6 @@ CFreeScanDlg::CFreeScanDlg(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectPag
 	:CPropertySheet(pszCaption, pParentWnd, iSelectPage)
 {
 	AllocateAndAddPages();
-
-	m_bHasRun = FALSE;
 
 	// Note that LoadIcon does not require a subsequent DestroyIcon in Win32
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -67,10 +62,13 @@ CFreeScanDlg::~CFreeScanDlg()
 
 // Creates storage space for the PropertyPages
 // then adds them to the dialog
-void CFreeScanDlg::AllocateAndAddPages(void)
-{
+void CFreeScanDlg::AllocateAndAddPages(void) {
+
+	// Status Dialog
+	m_pStatusDlg = new CStatusDlg;
+
 	// Allocate all of the classes for the PropertyPages
-	m_pDetailDlg =  new CDetailDlg;
+	m_pDetailDlg =  new CDetailDlg(m_pStatusDlg);
 	m_pEngineViewDlg = new	CEngineViewDlg; // new view
 	m_pStatusBitsDlg = new	CStatusBitsDlg; // Status Bits
 	m_pDashBoardDlg = new	CDashBoardDlg;
@@ -78,18 +76,6 @@ void CFreeScanDlg::AllocateAndAddPages(void)
 	m_pAdvancedDlg = new CAdvancedDlg;
 	m_pTCodesDlg = new CTCodesDlg;
 	m_pAbout = new CAbout;
-
-	// Status Dialog
-	m_pStatusDlg = new CStatusDlg;
-
-	// Pass pointers to the called dialogs
-	m_pDetailDlg->m_pMainDlg = this;
-	m_pEngineViewDlg->m_pMainDlg = this; // new view
-	m_pStatusBitsDlg->m_pMainDlg = this; // Status Bits
-	m_pDashBoardDlg->m_pMainDlg = this;
-	m_pTCodesDlg->m_pMainDlg = this;
-	m_pSensorDlg->m_pMainDlg = this;
-	m_pAdvancedDlg->m_pMainDlg = this;
 
 	// Now Add the pages to the Dialog
 	AddPage(m_pDetailDlg);
@@ -103,9 +89,6 @@ void CFreeScanDlg::AllocateAndAddPages(void)
 		m_pEngineDlg = new	CEngineDlg; // Old Engine Data View
 		m_pRawMode00Dlg = new CRawMode00;
 		m_pRawMode01Dlg = new CRawMode01;
-		m_pEngineDlg->m_pMainDlg = this; // Old Engine Data View
-		m_pRawMode00Dlg->m_pMainDlg = this;
-		m_pRawMode01Dlg->m_pMainDlg = this;
 		AddPage(m_pEngineDlg); // Old Engine Data View
 		AddPage(m_pRawMode00Dlg);
 		AddPage(m_pRawMode01Dlg);
@@ -136,111 +119,72 @@ void CFreeScanDlg::SetLogoFont(CString Name, int nHeight/* = 24*/,
 }
 
 // Updates all property pages in this dialog
-void CFreeScanDlg::UpdateDialog(void)
+void CFreeScanDlg::Update(const CEcuData* const ecuData)
 {
 	if (IsWindow(*m_pDetailDlg))
 	{
-		m_pDetailDlg->Refresh();
+		m_pDetailDlg->Refresh(ecuData);
 	}
 	if (IsWindow(*m_pEngineViewDlg))
 	{
-		m_pEngineViewDlg->Refresh();
+		m_pEngineViewDlg->Refresh(ecuData);
 	}
 	if (IsWindow(*m_pStatusBitsDlg))
 	{
-		m_pStatusBitsDlg->Refresh();
+		m_pStatusBitsDlg->Refresh(ecuData);
 	}
 	if (IsWindow(*m_pDashBoardDlg))
 	{
-		m_pDashBoardDlg->Refresh();
+		m_pDashBoardDlg->Refresh(ecuData);
 	}
 	if (IsWindow(*m_pTCodesDlg))
 	{
-		m_pTCodesDlg->Refresh();
+		m_pTCodesDlg->Refresh(ecuData);
 	}
 	if (IsWindow(*m_pSensorDlg))
 	{
-		m_pSensorDlg->Refresh();
+		m_pSensorDlg->Refresh(ecuData);
 	}
 	if (IsWindow(*m_pAdvancedDlg))
 	{
-		m_pAdvancedDlg->Refresh();
+		m_pAdvancedDlg->Refresh(ecuData);
 	}
 #ifdef _DEBUG // Handle these only in Debug builds
 	if (IsWindow(*m_pEngineDlg))
 	{ // Old Engine Data View
-		m_pEngineDlg->Refresh();
+		m_pEngineDlg->Refresh(ecuData);
 	}
 	if (IsWindow(*m_pRawMode00Dlg))
 	{
-		m_pRawMode00Dlg->Refresh();
+		m_pRawMode00Dlg->Refresh(ecuData);
 	}
 	if (IsWindow(*m_pRawMode01Dlg))
 	{
-		m_pRawMode01Dlg->Refresh();
+		m_pRawMode01Dlg->Refresh(ecuData);
 	}
 #endif // _DEBUG
 //	UpdateData(TRUE);
 }
 
-// Starts the Supervisor
-BOOL CFreeScanDlg::StartComs(void)
-{
-	if (!m_bHasRun)
-	{ // First time started
-		if (m_pSupervisor->Start())
-		{
-			m_bHasRun = TRUE;
-			return TRUE;
-		}
-		else
-			return FALSE;
-	}
-	else
-		return m_pSupervisor->Restart();
-}
-
-// Stops the Supervisor
-BOOL CFreeScanDlg::StopComs(void)
-{
-	return m_pSupervisor->Stop();
-}
-
 // Writes a line of ASCII to the spy window
-void CFreeScanDlg::WriteStatus(CString csText)
-{
+void CFreeScanDlg::WriteStatus(CString csText) {
 	csText = "Main: " + csText;
 	m_pStatusDlg->WriteStatus(csText);
 }
 
 // Writes a line of binary as ASCII to the spy window
-void CFreeScanDlg::WriteASCII(unsigned char * buffer, int ilength)
-{
+void CFreeScanDlg::WriteASCII(unsigned char * buffer, int ilength){
 	m_pStatusDlg->WriteASCII(buffer, ilength);
 }
 
-void CFreeScanDlg::WriteLogEntry(LPCTSTR pstrFormat, ...)
-{
+void CFreeScanDlg::WriteLogEntry(LPCTSTR pstrFormat, ...) {
 	va_list args;
 	va_start(args, pstrFormat);
 	m_pStatusDlg->WriteLogEntry(pstrFormat, args);
 }
 
-void CFreeScanDlg::WriteStatusLogged(CString csText) 
-{
+void CFreeScanDlg::WriteStatusLogged(CString csText) {
 	m_pStatusDlg->WriteStatusTimeLogged(csText);
-}
-
-// Starts or stops csv logging to file
-BOOL CFreeScanDlg::StartLog(BOOL bStart)
-{
-	return m_pStatusDlg->StartLog(bStart);
-}
-
-// Starts or stops csv logging to file
-BOOL CFreeScanDlg::StartCSVLog(BOOL bStart)
-{
-	return m_pSupervisor->StartCSVLog(bStart);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -286,6 +230,20 @@ BOOL CFreeScanDlg::OnInitDialog()
 
 	// Initialise the communications supervisor
 	m_pSupervisor = new CSupervisor(this, m_pStatusDlg);
+
+	m_pDetailDlg->RegisterSupervisor(m_pSupervisor);
+	m_pEngineViewDlg->RegisterSupervisor(m_pSupervisor);
+	m_pStatusBitsDlg->RegisterSupervisor(m_pSupervisor);
+	m_pDashBoardDlg->RegisterSupervisor(m_pSupervisor);
+	m_pSensorDlg->RegisterSupervisor(m_pSupervisor);
+	m_pAdvancedDlg->RegisterSupervisor(m_pSupervisor);
+	m_pTCodesDlg->RegisterSupervisor(m_pSupervisor);
+
+#ifdef _DEBUG // Add these only in Debug builds
+	m_pEngineDlg->RegisterSupervisor(m_pSupervisor);
+	m_pRawMode00Dlg->RegisterSupervisor(m_pSupervisor);
+	m_pRawMode01Dlg->RegisterSupervisor(m_pSupervisor);
+#endif // _DEBUG
 
 	// We now start creating our User Interface
 	CPropertySheet::OnInitDialog();

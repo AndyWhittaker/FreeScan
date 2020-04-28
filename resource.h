@@ -147,8 +147,6 @@
 #define IDC_SPIN                        1482
 #define IDC_RESETBLM                    1483
 #define IDC_RESETIAC                    1484
-#define IDC_RBGABOUT                    1487
-#define IDC_RBGAUGE1                    1488
 #define IDC_THROT                       1489
 #define IDC_MODEL                       1491
 #define IDC_COMMENTS                    1494
@@ -175,6 +173,15 @@
 #define IDC_DISABLE                     1511
 #define IDC_LED2                        1512
 #define IDC_LED3                        1513
+#define IDC_TACHO_TEXT                  1514
+#define IDC_SPEEDO_MPH_TEXT             1515
+#define IDC_SPEEDO_KPH_TEXT             1516
+#define IDC_BOOST_TEXT                  1517
+#define IDC_SPARK_TEXT                  1518
+#define IDC_AIRFUEL_TEXT                1519
+#define IDC_WATER_TEXT                  1520
+#define IDC_MAT_TEXT                    1521
+#define IDC_VOLT_TEXT                   1522
 
 // Next default values for new objects
 // 

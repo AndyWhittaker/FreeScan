@@ -4,15 +4,10 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "FreeScan.h"
-#include "MainDlg.h"
-#include "Supervisor.h"
-#include "StatusDlg.h"
-#include "EnumSer.h" // for EnumerateSerialPorts(...)
-
 #include "DetailDlg.h"
 
+#include "FreeScan.h"
+#include "EnumSer.h" // for EnumerateSerialPorts(...)
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -23,15 +18,13 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CDetailDlg property page
 
-IMPLEMENT_DYNCREATE(CDetailDlg, CTTPropertyPage)
-
-CDetailDlg::CDetailDlg() : CTTPropertyPage(CDetailDlg::IDD)
+CDetailDlg::CDetailDlg(CStatusWriter* pStatusWriter) : CTTPropertyPage(CDetailDlg::IDD), m_pStatusWriter(pStatusWriter)
 {
 	//{{AFX_DATA_INIT(CDetailDlg)
 	//}}AFX_DATA_INIT
 
 	Enumerate(); // Build a list of available serial ports
-	m_pMainDlg = NULL;
+	m_pSupervisor = NULL;
 	m_bCSVFirstTime = TRUE;
 	m_bLogFirstTime = TRUE;
 
@@ -71,18 +64,9 @@ void CDetailDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_INTERACT, m_Interact);
 	//}}AFX_DATA_MAP
 
-	Refresh();
-}
-
-// Write to the Status Dialog
-void CDetailDlg::WriteStatus(CString csText)
-{
-	m_pMainDlg->WriteStatus(csText);
-}
-
-void CDetailDlg::WriteASCII(unsigned char * buffer, int ilength)
-{
-	m_pMainDlg->WriteASCII(buffer, ilength);
+	if (m_pSupervisor != NULL) {
+		Refresh(m_pSupervisor->GetEcuData());
+	}
 }
 
 BEGIN_MESSAGE_MAP(CDetailDlg, CTTPropertyPage)
@@ -107,52 +91,23 @@ BEGIN_MESSAGE_MAP(CDetailDlg, CTTPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-// Returns a pointer to the Supervisor
-CSupervisor* CDetailDlg::GetSupervisor(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
-
-// Returns a pointer to the Supervisor
-CSupervisor* CDetailDlg::GetData(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
-
-// Returns if the ECU is interactive
-BOOL CDetailDlg::GetInteract(void)
-{
-	return GetSupervisor()->GetInteract();
-}
-
-// Returns if FreeScan is in Metric
-BOOL CDetailDlg::GetCentigrade(void)
-{
-	return GetSupervisor()->GetCentigrade();
-}
-
-// Returns if FreeScan is in Metric
-BOOL CDetailDlg::GetMiles(void)
-{
-	return GetSupervisor()->GetMiles();
-}
 
 // Updates all of our controls
-void CDetailDlg::Refresh(void)
+void CDetailDlg::Refresh(const CEcuData* const ecuData)
 {
 	CString buf;
 	
 	// Update bytes sent and received
-	buf.Format("%d", GetSupervisor()->m_dwBytesReceived);
+	buf.Format("%d", m_pSupervisor->GetReceivedBytes());
 	m_Received.SetWindowText(buf);
-	buf.Format("%d", GetSupervisor()->m_dwBytesSent);
+	buf.Format("%d", m_pSupervisor->GetSentBytes());
 	m_Sent.SetWindowText(buf);
 
 	m_Comments.ResetContent();	// Clear protocol comments
 
 	// Display the protocol's comments
 	CString csTemp;
-	csTemp = GetSupervisor()->m_csProtocolComment;
+	csTemp = ecuData->m_csProtocolComment;
 	int		iIndex=0;
 
 	// Format the text in the ListBox.
@@ -173,39 +128,43 @@ void CDetailDlg::Init(void)
 	m_Model.SetCurSel(m_iModel);
 	m_Model.GetLBText(m_iModel, csText);
 	csText = "Model " + csText + " selected.";
-	WriteStatus(csText);
+	m_pStatusWriter->WriteStatus(csText);
 
-	GetSupervisor()->Init(m_pMainDlg, m_iModel);
+	m_pSupervisor->Init(m_iModel);
 	
 	// Set the write delay
 	CString buf;
-	buf.Format("%d", (DWORD)GetSupervisor()->GetWriteDelay());
+	buf.Format("%d", (DWORD)m_pSupervisor->GetWriteDelay());
 	m_WriteDelay.SetWindowText(buf);
 
 	// Display the current com port in the ComboBox
 	CString csTemp;
-	csTemp.Format("COM%d", GetSupervisor()->GetCurrentPort());
+	csTemp.Format("COM%d", m_pSupervisor->GetCurrentPort());
 	m_ComSelect.SetWindowText(csTemp);
 
-	Refresh();
+	Refresh(m_pSupervisor->GetEcuData());
 
 	// Set up interact/listen buttons
-	if (GetInteract())
+	if (m_pSupervisor->GetInteract())
 		OnInteract();
 	else
 		OnListen();
 
 	// Set up DegC/DegF buttons
-	if (GetCentigrade())
+	if (m_pSupervisor->GetCentigrade())
 		OnDegC();
 	else
 		OnDegF();
 
 	// Set up mph/kph buttons
-	if (GetMiles())
+	if (m_pSupervisor->GetMiles())
 		OnMph();
 	else
 		OnKph();
+}
+
+void CDetailDlg::RegisterSupervisor(CSupervisorInterface* const pSupervisor) {
+	m_pSupervisor = pSupervisor;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -216,7 +175,7 @@ void CDetailDlg::OnStartlog()
 	if (m_bLogFirstTime)
 	{
 		m_bLogFirstTime = FALSE;
-		if (!(m_pMainDlg->StartLog(TRUE)))
+		if (!(m_pStatusWriter->StartLog(TRUE)))
 			m_bLogFirstTime = TRUE;// Call may have failed
 		else
 			m_StartLog.SetWindowText(_T("Stop Logging"));
@@ -225,7 +184,7 @@ void CDetailDlg::OnStartlog()
 	{
 		m_bLogFirstTime = TRUE;
 		m_StartLog.SetWindowText(_T("Log ECU Coms to Disk"));
-		m_pMainDlg->StartLog(FALSE);
+		m_pStatusWriter->StartLog(FALSE);
 	}
 }
 
@@ -235,11 +194,12 @@ void CDetailDlg::OnStart()
 //	m_pMainDlg->m_pSupervisor->Test(); // test the parser
 //	return;
 
-	m_pMainDlg->StartComs();
+	m_pSupervisor->Start();
 	m_Stop.EnableWindow(TRUE); // enable the stop monitoring button
 	m_Start.SetWindowText(_T("Restart")); // Start monitoring button's text
 	m_Start.EnableWindow(FALSE); // disable the start monitoring button
 	m_ComSelect.EnableWindow(FALSE); // Disable COM Port changes
+	m_Force.EnableWindow(m_pSupervisor->GetInteract());
 }
 
 void CDetailDlg::OnStop()
@@ -247,13 +207,14 @@ void CDetailDlg::OnStop()
 	m_Start.EnableWindow(TRUE); // enable the start monitoring button
 	m_Stop.EnableWindow(FALSE); // disable the stop monitoring button
 	m_ComSelect.EnableWindow(TRUE); // Enable COM Port changes
-	m_pMainDlg->StopComs();
+	m_pSupervisor->Stop();
+	m_Force.EnableWindow(FALSE);
 }
 
 // Hides or unhides the status messages window when asked to
 void CDetailDlg::OnHide() 
 {// CButton
-	m_pMainDlg->m_pStatusDlg->Hide(m_Hide.GetCheck());
+	m_pStatusWriter->Hide(m_Hide.GetCheck());
 }
 
 BOOL CDetailDlg::OnInitDialog()
@@ -275,11 +236,18 @@ BOOL CDetailDlg::OnInitDialog()
 	m_toolTip.AddTool( GetDlgItem(IDC_FORCE),IDC_FORCE);
 
 	// Set the button state to the state of the messages window
-	m_Hide.SetCheck(m_pMainDlg->m_pStatusDlg->HideStatus());
+	m_Hide.SetCheck(m_pStatusWriter->IsHidden());
 
 	m_Start.EnableWindow(m_cuPorts.size() > 1 ? TRUE : FALSE);
 
 	m_Stop.EnableWindow(FALSE); // disable the stop monitoring button
+	
+	if (m_cuPorts.size() > 0) {
+		m_Start.EnableWindow(TRUE);
+	} else {
+		m_Start.EnableWindow(FALSE);
+		m_pStatusWriter->WriteStatus("No COM ports detected - cannot start");
+	}
 
 	m_ComSelect.ResetContent();
 	// Fill up the COMBOBOX with our serial ports
@@ -313,16 +281,16 @@ void CDetailDlg::OnSelendokComselect()
 	CString		csText;
 	m_ComSelect.GetLBText(m_ComSelect.GetCurSel(),csText);
 	csText = "Selected " + csText;
-	WriteStatus(csText);
+	m_pStatusWriter->WriteStatus(csText);
 	
-	GetSupervisor()->SetCurrentPort(m_cuPorts[m_ComSelect.GetCurSel()]);
+	m_pSupervisor->SetCurrentPort(m_cuPorts[m_ComSelect.GetCurSel()]);
 }
 
 void CDetailDlg::OnKillfocusComselect()
 {
 	// Display the current com port in the ComboBox
 	CString csTemp;
-	csTemp.Format("COM%d", GetSupervisor()->GetCurrentPort());
+	csTemp.Format("COM%d", m_pSupervisor->GetCurrentPort());
 	m_ComSelect.SetWindowText(csTemp);
 }
 
@@ -332,7 +300,13 @@ void CDetailDlg::OnKillfocusComselect()
 void CDetailDlg::OnSelendokModel()
 {
 	m_iModel = m_Model.GetCurSel();
-	m_Start.EnableWindow(TRUE); // enable the start monitoring button
+	
+	if (m_cuPorts.size() > 0) {
+		m_Start.EnableWindow(TRUE);
+	} else {
+		m_Start.EnableWindow(FALSE);
+		m_pStatusWriter->WriteStatus("No COM ports detected - cannot start");
+	}
 	m_Stop.EnableWindow(FALSE); // disable the stop monitoring button
 	Init();
 }
@@ -342,7 +316,7 @@ void CDetailDlg::OnListen()
 {
 	m_Listen.SetCheck(TRUE);
 	m_Interact.SetCheck(FALSE);
-	GetSupervisor()->Interact(FALSE);
+	m_pSupervisor->Interact(FALSE);
 	m_Force.EnableWindow(FALSE);
 }
 
@@ -351,8 +325,8 @@ void CDetailDlg::OnInteract()
 {
 	m_Listen.SetCheck(FALSE);
 	m_Interact.SetCheck(TRUE);
-	GetSupervisor()->Interact(TRUE);
-	m_Force.EnableWindow(TRUE);
+	m_pSupervisor->Interact(TRUE);
+	m_Force.EnableWindow(m_Stop.IsWindowEnabled());
 }
 
 void CDetailDlg::OnCsv()
@@ -360,7 +334,7 @@ void CDetailDlg::OnCsv()
 	if (m_bCSVFirstTime)
 	{
 		m_bCSVFirstTime = FALSE;
-		if (!(m_pMainDlg->StartCSVLog(TRUE)))
+		if (!(m_pSupervisor->StartCSVLog(TRUE)))
 			m_bCSVFirstTime = TRUE;// Call may have failed
 		else
 			m_CSV.SetWindowText("Stop");
@@ -369,7 +343,7 @@ void CDetailDlg::OnCsv()
 	{
 		m_bCSVFirstTime = TRUE;
 		m_CSV.SetWindowText("Start");
-		m_pMainDlg->StartCSVLog(FALSE);
+		m_pSupervisor->StartCSVLog(FALSE);
 	}
 }
 
@@ -380,49 +354,53 @@ void CDetailDlg::OnCsvoptions()
 
 void CDetailDlg::OnForce() 
 {
-	GetSupervisor()->ForceShutUp();
+	m_pSupervisor->ForceDataFromECU();
 }
 
 void CDetailDlg::OnDegC() 
 {
 	m_DegC.SetCheck(TRUE);
 	m_DegF.SetCheck(FALSE);
-	GetSupervisor()->Centigrade(TRUE);
-	WriteStatus("Temperatures will be in degrees C");
+	m_pSupervisor->Centigrade(TRUE);
+	m_pStatusWriter->WriteStatus("Temperatures will be in degrees C");
 }
 
 void CDetailDlg::OnDegF() 
 {
 	m_DegC.SetCheck(FALSE);
 	m_DegF.SetCheck(TRUE);
-	GetSupervisor()->Centigrade(FALSE);
-	WriteStatus("Temperatures will be in degrees F");
-	AfxMessageBox("Please Note: this version only displays Centrigrade and Miles correctly in the dashboard");
+	m_pSupervisor->Centigrade(FALSE);
+	m_pStatusWriter->WriteStatus("Temperatures will be in degrees F");
+	AfxMessageBox("Please Note: this version only displays Centrigrade in the dashboard");
 }
 
 void CDetailDlg::OnKph() 
 {
 	m_kph.SetCheck(TRUE);
 	m_mph.SetCheck(FALSE);
-	GetSupervisor()->Miles(FALSE);
-	WriteStatus("Speeds will be in kph");
-	AfxMessageBox("Please Note: this version only displays Centrigrade and Miles correctly in the dashboard");
+	m_pSupervisor->Miles(FALSE);
+	m_pStatusWriter->WriteStatus("Speeds will be in kph");
 }
 
 void CDetailDlg::OnMph() 
 {
 	m_kph.SetCheck(FALSE);
 	m_mph.SetCheck(TRUE);
-	GetSupervisor()->Miles(TRUE);
-	WriteStatus("Speeds will be in mph");
+	m_pSupervisor->Miles(TRUE);
+	m_pStatusWriter->WriteStatus("Speeds will be in mph");
 }
 
 // Handles the delay combobox
 void CDetailDlg::OnSelendokDelay() 
 {
-	CStringEx	csText;
-	m_WriteDelay.GetLBText(m_WriteDelay.GetCurSel(),csText);
-	GetSupervisor()->SetWriteDelay(csText.GetInt());
-	csText = "Write Delay Set to " + csText + "mS";
-	WriteStatus(csText);
+	CString	csText;
+	int delay;
+
+	m_WriteDelay.GetLBText(m_WriteDelay.GetCurSel(), csText);
+	
+	delay = atoi(csText);
+	m_pSupervisor->SetWriteDelay(delay);
+
+	csText.Format("Write Delay Set to %dmS", delay);
+	m_pStatusWriter->WriteStatus(csText);
 }

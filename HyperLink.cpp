@@ -16,8 +16,9 @@
 // "Default hand cursor" from Paul DiLascia's Jan 1998 MSJ article.
 //
 
-#include "stdafx.h"
 #include "HyperLink.h"
+
+#pragma warning(disable: 4100)
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

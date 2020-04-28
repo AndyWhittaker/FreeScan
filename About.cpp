@@ -4,10 +4,9 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "resource.h"
-#include "FreeScan.h"
 #include "About.h"
+
+#include "resource.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -58,7 +57,7 @@ static char BASED_CODE THIS_FILE[] = __FILE__;
 // 
 // Array count. Make sure this keeps up with how many lines there are
 // in the array!
-#define ARRAYCOUNT		68
+#define ARRAYCOUNT		63
 char *pArrCredit[] = { 	"LOGO\b",
 						"look into your Engine Management System with your PC \f",
 						"",
@@ -110,9 +109,6 @@ char *pArrCredit[] = { 	"LOGO\b",
 						"Communications Class \t",
 						"Remon Spekreijse, et al \f",
 						"",
-						"Gauge ActiveX Control \t",
-						"Redbird Software \f",
-						"",
 						"Scrolling Credits \t",
 						"Mark Findlay \f",
 						"",
@@ -150,14 +146,12 @@ void CAbout::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CAbout)
 	DDX_Control(pDX, IDC_HYPERLINK, m_HyperLink1);
 	DDX_Control(pDX, IDC_HYPERLINK2, m_HyperLink2);
-	DDX_Control(pDX, IDC_RBGAUGE1, m_gauge);
 	//}}AFX_DATA_MAP
 }
 
 
 BEGIN_MESSAGE_MAP(CAbout, CPropertyPage)
 	//{{AFX_MSG_MAP(CAbout)
-	ON_BN_CLICKED(IDC_RBGABOUT, OnRbgabout)
 	ON_WM_PAINT()
 	ON_WM_TIMER()
 	ON_WM_DESTROY()
@@ -166,13 +160,6 @@ BEGIN_MESSAGE_MAP(CAbout, CPropertyPage)
 	ON_STN_CLICKED(IDC_HYPERLINK2, &CAbout::OnStnClickedHyperlink2)
 END_MESSAGE_MAP()
 
-/////////////////////////////////////////////////////////////////////////////
-// CAbout message handlers
-
-void CAbout::OnRbgabout() 
-{
-	m_gauge.AboutBox();
-}
 
 //************************************************************************
 //	 OnPaint
@@ -192,7 +179,7 @@ void CAbout::OnPaint()
 	//*********************************************************************
 	//	FONT SELECTION
     	CFont m_fntArial;
-	CFont* pOldFont;
+	CFont* pOldFont = NULL;
 	BOOL bSuccess;
 	
 	BOOL bUnderline;
@@ -208,7 +195,7 @@ void CAbout::OnPaint()
 			bUnderline = FALSE;
 			nCurrentFontHeight = NORMAL_TEXT_HEIGHT;
    			bSuccess = m_fntArial.CreateFont(NORMAL_TEXT_HEIGHT, 0, 0, 0, 
-   								FW_THIN, bItalic, bUnderline, 0, 
+   								FW_THIN, (BYTE) bItalic, (BYTE) bUnderline, 0, 
    								ANSI_CHARSET,
                                	OUT_DEFAULT_PRECIS,
                                	CLIP_DEFAULT_PRECIS,
@@ -224,7 +211,7 @@ void CAbout::OnPaint()
 			bUnderline = FALSE;
 			nCurrentFontHeight = TOP_LEVEL_GROUP_HEIGHT;
    			bSuccess = m_fntArial.CreateFont(TOP_LEVEL_GROUP_HEIGHT, 0, 0, 0, 
-   								FW_BOLD, bItalic, bUnderline, 0, 
+   								FW_BOLD, (BYTE) bItalic, (BYTE) bUnderline, 0, 
    								ANSI_CHARSET,
                                	OUT_DEFAULT_PRECIS,
                                	CLIP_DEFAULT_PRECIS,
@@ -242,7 +229,7 @@ void CAbout::OnPaint()
 			bUnderline = FALSE;
 			nCurrentFontHeight = GROUP_TITLE_HEIGHT;
    			bSuccess = m_fntArial.CreateFont(GROUP_TITLE_HEIGHT, 0, 0, 0, 
-   								FW_BOLD, bItalic, bUnderline, 0, 
+   								FW_BOLD, (BYTE) bItalic, (BYTE) bUnderline, 0, 
    								ANSI_CHARSET,
                                	OUT_DEFAULT_PRECIS,
                                	CLIP_DEFAULT_PRECIS,
@@ -259,7 +246,7 @@ void CAbout::OnPaint()
 			bUnderline = TRUE;
 			nCurrentFontHeight = TOP_LEVEL_TITLE_HEIGHT;
 			bSuccess = m_fntArial.CreateFont(TOP_LEVEL_TITLE_HEIGHT, 0, 0, 0, 
-								FW_BOLD, bItalic, bUnderline, 0, 
+								FW_BOLD, (BYTE) bItalic, (BYTE) bUnderline, 0, 
 								ANSI_CHARSET,
 	                           	OUT_DEFAULT_PRECIS,
 	                           	CLIP_DEFAULT_PRECIS,
@@ -278,7 +265,7 @@ void CAbout::OnPaint()
 					{
 					CString str; 
 					str.Format("Could not find bitmap resource \"%s\". "
-                               "Be sure to assign the bitmap a QUOTED resource name", szBitmap); 
+                               "Be sure to assign the bitmap a QUOTED resource name", szBitmap.GetString()); 
 					KillTimer(DISPLAY_TIMER_ID); 
 					MessageBox(str); 
 					return; 
@@ -328,7 +315,7 @@ void CAbout::OnPaint()
 	
 	if (!m_bProcessingBitmap)
 		{
-		int x = pDc->DrawText((const char *)m_szWork,m_szWork.GetLength()-1,&r,DT_TOP|DT_CENTER|
+		pDc->DrawText((const char *)m_szWork,m_szWork.GetLength()-1,&r,DT_TOP|DT_CENTER|
 					DT_NOPREFIX | DT_SINGLELINE);	
 		m_bDrawText=FALSE;
 		}
@@ -435,13 +422,13 @@ void CAbout::OnTimer(UINT nIDEvent)
 	m_pDisplayFrame->ScrollWindow(0,SCROLLAMOUNT,&m_ScrollRect,&m_ScrollRect);
 	nClip = nClip + abs(SCROLLAMOUNT);	
 	
-    CRect r;
+    CRect rect;
     CWnd* pWnd = GetDlgItem(IDC_DISPLAY_STATIC);
     ASSERT_VALID(pWnd);
-    pWnd->GetClientRect(&r);
-    pWnd->ClientToScreen(r);
-    ScreenToClient(&r);
-    InvalidateRect(r,FALSE); // FALSE does not erase background
+    pWnd->GetClientRect(&rect);
+    pWnd->ClientToScreen(rect);
+    ScreenToClient(&rect);
+    InvalidateRect(rect,FALSE); // FALSE does not erase background
 
 	CPropertyPage::OnTimer(nIDEvent);
 }

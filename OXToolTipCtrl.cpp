@@ -8,7 +8,6 @@
 			  
 // //////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
 #include "OXToolTipCtrl.h"
 
 #ifdef _DEBUG
@@ -192,7 +191,6 @@ void COXToolTipCtrl::OnTimer(UINT nIDEvent)
             KillTimer(eIDDisplayToolEvent);
             if (IsCursorInTool(m_pCurrentToolTip))
             {
-                CPoint pt;
                 GetCursorPos(&pt);
                 pt += m_ptOffset;
                 DisplayToolTip(pt);
@@ -206,7 +204,7 @@ void COXToolTipCtrl::OnTimer(UINT nIDEvent)
         // reset the egg timer and check again later.
         case eIDCheckToolEvent:
             m_nElapsedTime += m_nCheckInterval;
-
+            
             GetCursorPos(&pt);
             m_pParentWnd->ScreenToClient(&pt);
             pToolTip = FindToolFromPoint(pt);

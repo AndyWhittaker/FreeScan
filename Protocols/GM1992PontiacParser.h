@@ -9,49 +9,40 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "GMBaseFunctions.h"
+#include "BaseDefines.h"
+
+#include "BaseParser.h"
+#include "BaseProtocol.h"
 
 #define ECU_HEADER_GM1992Pontiac				0xf4
 #define ECU_CHATTER_HEADER_GM1992Pontiac		0xf0
 
-class CSupervisor;
-class CGM1992PontiacParser : public CGMBaseFunctions
+class CGM1992PontiacParser : public CBaseParser
 {
 public:
-	CGM1992PontiacParser();
+	CGM1992PontiacParser(CBaseProtocol* const pProtocol);
 	virtual ~CGM1992PontiacParser();
 
-	int Parse(unsigned char*, int iLength);
+	void InitializeSupportedValues(CEcuData* const ecuData);
+	BOOL Parse(const unsigned char* const buffer, int const length, CEcuData* const ecuData);
 
-protected:
-	// Protected pointers
-	CSupervisor*	m_pSupervisor; // pointer to the owner.
+private:
 	unsigned char	m_ucDTC[4]; // Fault codes buffer
 
-protected:
+private:
 	//Implementation
-	void ParseModeF0(unsigned char* buffer, int len);
-	void ParseMode05(unsigned char* buffer, int len);
-	void ParseMode0A(unsigned char* buffer, int len);
-	void ParseMode1_0(unsigned char* buffer, int len);
-	void ParseMode2(unsigned char* buffer, int len);
-	void ParseMode3(unsigned char* buffer, int len);
-	void ParseMode4(unsigned char* buffer, int len);
-	void ParseMode7(unsigned char* buffer, int len);
-	void ParseMode8(unsigned char* buffer, int len);
-	void ParseMode9(unsigned char* buffer, int len);
-	void ParseMode10(unsigned char* buffer, int len);
-	void ParseDTCs(void);// Parse the DTCs
-
-	// CSV Logging
-	BOOL StartCSVLog(BOOL bStart);// Starts or stops csv logging to file
-	CStdioFile	m_file;// File class for logging to disk
-	CString		m_csCSVLogFile;// Filename for CSV logging
-	DWORD		m_dwCSVRecord;//CSV record number
-
-	void WriteCSV(BOOL bTitle);//Write CSV data to disk
-
-	void UpdateDialog(void);// forces dialog to be updated
+	BOOL ParseModeF0(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode05(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode0A(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode1_0(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode2(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode3(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode4(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode7(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode8(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode9(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	BOOL ParseMode10(const unsigned char* buffer, int len, CEcuData* const ecuData);
+	void ParseDTCs(CEcuData *const ecuData);// Parse the DTCs
 };
 
 #endif // !defined(AFX_GM1992PontiacPARSER_H__19F33D4B_4031_11D3_9828_0080C83832F8__INCLUDED_)

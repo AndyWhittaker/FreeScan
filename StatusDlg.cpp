@@ -7,10 +7,12 @@
 // (c) 1991-99 Andy Whittaker, Chester, England. 
 // mail@andywhittaker.com
 //
-#include "stdafx.h"
-#include "cderr.h" // for CommDlgExtendedError()
-#include "FreeScan.h"
+
 #include "StatusDlg.h"
+
+#include "cderr.h" // for CommDlgExtendedError()
+#include "strsafe.h"
+#include "FreeScan.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -119,7 +121,7 @@ void CStatusDlg::WriteStatusTimeLogged(CString csText)
 }
 
 //Writes the contents of the given buffer as a Hex-dump
-void CStatusDlg::WriteASCII(unsigned char * buffer, int ilength)
+void CStatusDlg::WriteASCII(const unsigned char* const buffer, int ilength)
 {
 	if (m_hidden) // don't write to window when hidden
 		return;
@@ -194,10 +196,8 @@ BOOL CStatusDlg::StartLog(BOOL bStart)
 
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(ofn)); // initialize structure to 0/NULL
-	TCHAR szFileName[_MAX_PATH]; // contains full path name after return
-	TCHAR szFileTitle[_MAX_PATH];
-	szFileName[0] = '\0'; // initialises file title buffer
-	szFileTitle[0] = '\0';
+	TCHAR szFileName[_MAX_PATH] = { 0 }; // contains full path name after return
+	TCHAR szFileTitle[_MAX_PATH] = { 0 };
 	ofn.lStructSize = sizeof(ofn);
 	ofn.lpstrFile = szFileName;
 	ofn.nMaxFile = _countof(szFileName);
@@ -206,6 +206,7 @@ BOOL CStatusDlg::StartLog(BOOL bStart)
 	ofn.lpstrTitle = _T("Create/Open Logging File");
 	ofn.lpstrFilter = _T("log Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0\0\0");
 	ofn.lpstrInitialDir = m_csLogFile.GetString();
+	ofn.lpstrDefExt = _T("txt");
 
 	// setup initial file name from the registry
 	//lstrcpyn(szFileName, m_csLogFile, _countof(szFileName));//unsafe
@@ -312,7 +313,7 @@ void CStatusDlg::Hide(BOOL yes)
 }
 
 // Hide status of window
-BOOL CStatusDlg::HideStatus(void)
+BOOL CStatusDlg::IsHidden(void)
 {
 	return m_hidden;
 }
@@ -351,8 +352,8 @@ BOOL CStatusDlg::OnInitDialog()
 {
 	//Retrieve the Window Position from the registry
 	CWinApp* pApp = AfxGetApp();
-	m_WindowPos.left   = pApp->GetProfileInt(_T("StatusDlg"), _T("left pos"), 0);
-	m_WindowPos.top    = pApp->GetProfileInt(_T("StatusDlg"), _T("top pos"), 0);
+	m_WindowPos.left   = pApp->GetProfileInt(_T("StatusDlg"), _T("left pos"), 100);
+	m_WindowPos.top    = pApp->GetProfileInt(_T("StatusDlg"), _T("top pos"), 100);
 
 	// Set the window position
 	SetWindowPos( &wndBottom, m_WindowPos.left, m_WindowPos.top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
@@ -376,7 +377,7 @@ BOOL CStatusDlg::OnInitDialog()
 			ShowWindow(SW_SHOW);
 	}
 
-	return TRUE;
+	return bResult;
 }
 
 // This is called by the BaseDialog to create this Status Dialog

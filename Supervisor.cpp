@@ -5,11 +5,9 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "FreeScan.h"
-
 #include "Supervisor.h"
-#include "StatusDlg.h"
+
+#include "FreeScan.h"
 
 // Protocols installed:
 // Add what extra protocols you've included here:
@@ -34,10 +32,12 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
+#define		WM_TIMER_EVT1	0
+
 /////////////////////////////////////////////////////////////////////////////
 // CSupervisor
 
-CSupervisor::CSupervisor(CFreeScanDlg* pMainDlg, CStatusDlg* pStatusDlg)
+CSupervisor::CSupervisor(CFreeScanDlg* pMainDlg, CStatusWriter* pStatusDlg)
 {
 	m_pMainDlg = pMainDlg;
 	m_pStatusDlg = pStatusDlg;
@@ -47,210 +47,78 @@ CSupervisor::CSupervisor(CFreeScanDlg* pMainDlg, CStatusDlg* pStatusDlg)
 	m_bCentigrade = pApp->GetProfileInt(_T("Supervisor"), _T("Centigrade"), TRUE);
 	m_bMiles = pApp->GetProfileInt(_T("Supervisor"), _T("Miles"), TRUE);
 
+	m_pCom = NULL;
 	m_dwBytesSent = 0;
 	m_dwBytesReceived = 0;
-
-	m_ucF005 = new unsigned char[100]; // never should get this big
-	m_ucF00A = new unsigned char[100]; // never should get this big
-	m_ucF001 = new unsigned char[100]; // Mode 1 data buffer
-	m_ucF002 = new unsigned char[100]; // Mode 2 data buffer
-	m_ucF003 = new unsigned char[100]; // Mode 3 data buffer
-	m_ucF004 = new unsigned char[100]; // Mode 4 data buffer
-
-	ResetVariables();
-
-	m_pCom = NULL;
-	m_ProtocolWnd = NULL;
-	m_pParentWnd = NULL;
+	m_bHasRun = FALSE;
 	m_iModel = 0;
 
+	m_csCSVLogFile = pApp->GetProfileString("Supervisor", "CSV Log Filename", "");
+	m_dwCSVRecord = 0; // Initialise the CSV record number
+
+	// Recall previous settings from the registry.
+	m_bInteract = pApp->GetProfileInt("Supervisor", "Interact", FALSE);
+
 	// Null protocol pointers
-	m_pELM327Protocol = NULL;
-	m_pEspritProtocol = NULL;
-	m_pElanProtocol = NULL;
-	m_pLotusCarltonProtocol = NULL;
-	m_pGM1994CamaroZ28Protocol = NULL;
-	m_pGM1993CamaroZ28Protocol = NULL;
-	m_pGM1992PontiacProtocol = NULL;
-	m_pGM1989CorvetteProtocol = NULL;
-	m_pGMA140Protocol = NULL;
-	m_pGMA143Protocol = NULL;
-	m_pGMA160Protocol = NULL;
+	m_pProtocol = NULL;
+
+	m_pEcuData = new CEcuData();
 }
 
 CSupervisor::~CSupervisor()
 {
+	if (m_file.m_hFile != CFile::hFileNull)
+	{ // close our log file if it's open
+		m_file.Flush();
+		m_file.Close(); // close the logging file when we exit.
+	}
+
 	// Save our settings to the registry
 	CWinApp* pApp = AfxGetApp();
 	pApp->WriteProfileInt(_T("Supervisor"), _T("Centigrade"), m_bCentigrade);
 	pApp->WriteProfileInt(_T("Supervisor"), _T("Miles"), m_bMiles);
 
-	delete m_ucF005;
-	delete m_ucF00A;
-	delete m_ucF001; // Delete Mode 1 data buffer
-	delete m_ucF002; // Delete Mode 2 data buffer
-	delete m_ucF003; // Delete Mode 3 data buffer
-	delete m_ucF004; // Delete Mode 4 data buffer
+	pApp->WriteProfileString("Supervisor", "CSV Log Filename", m_csCSVLogFile);
+
+	pApp->WriteProfileInt("Supervisor", "Interact", m_bInteract);
 
 	// Mop-up any allocated protocol classes
 	Deallocate();
 }
 
-// Reset variables.
-void CSupervisor::ResetVariables(void)
-{
-	m_csProtocolComment = "";
-
-	memset(m_ucF005, 0, 100);
-	memset(m_ucF00A, 0, 100);
-	memset(m_ucF001, 0, 90);
-	memset(m_ucF002, 0, 90);
-	memset(m_ucF003, 0, 25);
-	memset(m_ucF004, 0, 25);
-
-	m_csDTC = "No reported faults."; // Reset Fault Codes
-
-	// Reset normal engine parameters
-	m_bEngineClosedLoop = FALSE; //
-	m_bEngineStalled = TRUE;  // bit 6
-	m_bACRequest = FALSE; // mode 1,  bit 0
-	m_bACClutch = FALSE; // mode 1, bit 2
-	m_fBatteryVolts = 0.0;
-	m_iRPM = 0;
-	m_iIACPosition = 0;
-	m_iDesiredIdle = 0;
-	m_iMPH = 0;
-	m_fStartWaterTemp = 0.0;
-	m_fWaterTemp = 0.0;
-	m_iWaterTempADC = 0;
-	m_fOilTemp = 0.0;
-	m_fWaterVolts = 0.0;
-	m_fMATTemp = 0.0;
-	m_fMATVolts = 0.0;
-	m_iMATADC = 0;
-	m_iEpromID = 0;
-	m_iRunTime = 0;
-	m_iCrankSensors = 0;
-	m_iThrottlePos = 0;
-	m_fThrottleVolts = 0.0;
-	m_iThrottleADC = 0;
-	m_iEngineLoad = 0;
-	m_fBaro = 0.0;
-	m_fBaroVolts = 0.0;
-	m_iBaroADC = 0;
-	m_fMAP = 0.0;
-	m_fMAPVolts = 0.0;
-	m_iMAPADC = 0;
-	m_iBoostPW = 0; // Pulse-width of the turbo boost controller
-	m_iCanisterDC = 0; // Duty Cycle of Charcoal Cansister controller
-	m_iSecondaryInjPW = 0; // Pulse-width of secondary injectors
-	m_iInjectorBasePWMsL = 0; // Injector Opening Time in Ms Left
-	m_iInjectorBasePWMsR = 0; // Injector Opening Time in Ms Right
-	m_fAFRatio = 0.0; // Air Fuel Ratio
-	m_fAirFlow = 0.0; // Air Flow
-	m_fSparkAdvance = 0.0;
-	m_fKnockRetard = 0.0;
-	m_iKnockCount = 0;
-	m_fO2VoltsLeft = 0.0;
-	m_fO2VoltsRight = 0.0;
-	m_iIntegratorL = 0; // Integrator Value Left
-	m_iIntegratorR = 0; // Integrator Value Right
-	m_iRichLeanCounterL = 0; // Rich/Lean Counter Left
-	m_iRichLeanCounterR = 0; // Rich/Lean Counter Right
-	m_iBLM = 0;	// Contents of the current BLM Cell
-	m_iBLMRight = 0;	// Contents of the current BLM Cell
-	m_iBLMCell = 0; // Current BLM Cell
-
-}
-
 // Deallocates the models we don't want to monitor.
-void CSupervisor::Deallocate(void)
-{
-	// ELM327 OBD-II Interface Chip.
-	if (m_pELM327Protocol != NULL)
-		m_pELM327Protocol->DestroyWindow();
-		delete m_pELM327Protocol; // Delete the active protocol
-	m_pELM327Protocol = NULL;
+void CSupervisor::Deallocate(void) {
 
-	// Lotus Esprit 4 Cylinder.
-	if (m_pEspritProtocol != NULL)
-		m_pEspritProtocol->DestroyWindow();
-		delete m_pEspritProtocol; // Delete the active protocol
-	m_pEspritProtocol = NULL;
+	if (m_pProtocol != NULL && m_pProtocol->GetTimeoutForPingDuringInteract() > 0 && ::IsWindow(m_hWnd)) {
+		KillTimer(WM_TIMER_EVT1);
+	}
 
-	// Lotus Elan M100.
-	if (m_pElanProtocol != NULL)
-		m_pElanProtocol->DestroyWindow();
-		delete m_pElanProtocol; // Delete the active protocol
-	m_pElanProtocol = NULL;
-
-	// Lotus Carlton
-	if (m_pLotusCarltonProtocol != NULL)
-		m_pLotusCarltonProtocol->DestroyWindow();
-		delete m_pLotusCarltonProtocol; // Delete the active protocol
-	m_pLotusCarltonProtocol = NULL;
-
-	// GM 1994 Camaro Z28.
-	if (m_pGM1994CamaroZ28Protocol != NULL)
-		m_pGM1994CamaroZ28Protocol->DestroyWindow();
-		delete m_pGM1994CamaroZ28Protocol; // Delete the active protocol
-	m_pGM1994CamaroZ28Protocol = NULL;
-
-	// GM 1993 Camaro Z28.
-	if (m_pGM1993CamaroZ28Protocol != NULL)
-		m_pGM1993CamaroZ28Protocol->DestroyWindow();
-		delete m_pGM1993CamaroZ28Protocol; // Delete the active protocol
-	m_pGM1993CamaroZ28Protocol = NULL;
-
-	// GM 1992 Pontiac.
-	if (m_pGM1992PontiacProtocol != NULL)
-		m_pGM1992PontiacProtocol->DestroyWindow();
-		delete m_pGM1992PontiacProtocol; // Delete the active protocol
-	m_pGM1992PontiacProtocol = NULL;
-
-	// GM 1989 Corvette.
-	if (m_pGM1989CorvetteProtocol != NULL)
-		m_pGM1989CorvetteProtocol->DestroyWindow();
-		delete m_pGM1989CorvetteProtocol; // Delete the active protocol
-	m_pGM1989CorvetteProtocol = NULL;
-
-	// GM A140
-	if (m_pGMA140Protocol != NULL)
-		m_pGMA140Protocol->DestroyWindow();
-		delete m_pGMA140Protocol; // Delete the active protocol
-	m_pGMA140Protocol = NULL;
-
-	// GM A143
-	if (m_pGMA143Protocol != NULL)
-		m_pGMA143Protocol->DestroyWindow();
-		delete m_pGMA143Protocol; // Delete the active protocol
-	m_pGMA143Protocol = NULL;
-
-	// GM A160
-	if (m_pGMA160Protocol != NULL)
-		m_pGMA160Protocol->DestroyWindow();
-		delete m_pGMA160Protocol; // Delete the active protocol
-	m_pGMA160Protocol = NULL;
+	// Delete the active protocol
+	if (m_pProtocol != NULL)
+		delete m_pProtocol;
+	m_pProtocol = NULL;
 
 	if (m_pCom != NULL)
 		delete m_pCom;
 	m_pCom = NULL;
+
+	if (m_pEcuData != NULL) {
+		delete m_pEcuData;
+	}
+	m_pEcuData = NULL;
 }
 
 // Initialises the Supervisor
-void CSupervisor::Init(CWnd* pParentWnd, int iModel)
+void CSupervisor::Init(int iModel)
 {
-	// Assign member variables for SetCurrentPort()
-	m_pParentWnd = pParentWnd;
 	m_iModel = iModel;
 
-	WriteStatus(" ");
 	WriteStatus("Initialising selected protocol...");
 
 	// Allocate and initialise the chosen ECU protocol.
 	Stop();
 	Deallocate();
-	ResetVariables();
+	m_pEcuData = new CEcuData();
 
 	// ****** This pointer should be the protocol window ******
 	// The protocol window also needs access to the com port.
@@ -261,99 +129,88 @@ void CSupervisor::Init(CWnd* pParentWnd, int iModel)
 	// These indexes must match the order of the text in the Vehicle Select ComboBox.
 	switch(iModel)
 	{
-	//case 0: // ELM327 OBD-II Interface.
-	//		m_pELM327Protocol = new CELM327Protocol;
-	//		m_ProtocolWnd = m_pELM327Protocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
+		case 0: // ELM327 OBD-II Interface.
+			m_pProtocol = new CELM327Protocol(m_pStatusDlg, this, m_bInteract);
 
-	//		// Copy the protocol's comments across to the Supervisor.
-	//		m_csProtocolComment = m_pELM327Protocol->m_csComment;
-	//		break;
-
-	case 1: // Lotus Esprit 4 Cylinder.
-			m_pEspritProtocol = new CEspritProtocol;
-			m_ProtocolWnd = m_pEspritProtocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
-
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pEspritProtocol->m_csComment;
 			break;
 
-	case 2: // Lotus Elan M100.
-			m_pElanProtocol = new CElanProtocol;
-			m_ProtocolWnd = m_pElanProtocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
+		case 1: // Lotus Esprit 4 Cylinder.
+			m_pProtocol = new CEspritProtocol(m_pStatusDlg, this, m_bInteract);
 
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pElanProtocol->m_csComment;
 			break;
 
-	case 3: // Lotus Carlton.
-			m_pLotusCarltonProtocol = new CLotusCarltonProtocol;
-			m_ProtocolWnd = m_pLotusCarltonProtocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
-
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pLotusCarltonProtocol->m_csComment;
+		case 2: // Lotus Elan M100.
+			m_pProtocol = new CElanProtocol(m_pStatusDlg, this, m_bInteract);
 			break;
 
-	case 4:	// GM 1994 Camaro Z28.
-			m_pGM1994CamaroZ28Protocol = new CGM1994CamaroZ28Protocol;
-			m_ProtocolWnd = m_pGM1994CamaroZ28Protocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
+		case 3: // Lotus Carlton.
+			m_pProtocol = new CLotusCarltonProtocol(m_pStatusDlg, this, m_bInteract);
+			break;
 
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pGM1994CamaroZ28Protocol->m_csComment;
+		case 4:	// GM 1994 Camaro Z28.
+			m_pProtocol = new CGM1994CamaroZ28Protocol(m_pStatusDlg, this, m_bInteract);
 			break;
 	
-	case 5:	// GM 1993 Camaro Z28.
-			m_pGM1993CamaroZ28Protocol = new CGM1993CamaroZ28Protocol;
-			m_ProtocolWnd = m_pGM1993CamaroZ28Protocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
-
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pGM1993CamaroZ28Protocol->m_csComment;
+		case 5:	// GM 1993 Camaro Z28.
+			m_pProtocol = new CGM1993CamaroZ28Protocol(m_pStatusDlg, this, m_bInteract);
 			break;
 	
-	case 6:	// GM 1992 Pontiac.
-			m_pGM1992PontiacProtocol = new CGM1992PontiacProtocol;
-			m_ProtocolWnd = m_pGM1992PontiacProtocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
-
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pGM1992PontiacProtocol->m_csComment;
+		case 6:	// GM 1992 Pontiac.
+			m_pProtocol = new CGM1992PontiacProtocol(m_pStatusDlg, this, m_bInteract);
 			break;
 	
-	case 7:	// GM 1989 Corvette.
-			m_pGM1989CorvetteProtocol = new CGM1989CorvetteProtocol;
-			m_ProtocolWnd = m_pGM1989CorvetteProtocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
-
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pGM1989CorvetteProtocol->m_csComment;
+		case 7:	// GM 1989 Corvette.
+			m_pProtocol = new CGM1989CorvetteProtocol(m_pStatusDlg, this, m_bInteract);
 			break;
 	
-	case 8:	// GM A140
-			m_pGMA140Protocol = new CGMA140Protocol;
-			m_ProtocolWnd = m_pGMA140Protocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
-
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pGMA140Protocol->m_csComment;
+		case 8:	// GM A140
+			m_pProtocol = new CGMA140Protocol(m_pStatusDlg, this, m_bInteract);
 			break;
 	
-	case 9:	// GM A143
-			m_pGMA143Protocol = new CGMA143Protocol;
-			m_ProtocolWnd = m_pGMA143Protocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
-
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pGMA143Protocol->m_csComment;
+		case 9:	// GM A143
+			m_pProtocol = new CGMA143Protocol(m_pStatusDlg, this, m_bInteract);
 			break;
 	
-	case 10:	// GM A160
-			m_pGMA160Protocol = new CGMA160Protocol;
-			m_ProtocolWnd = m_pGMA160Protocol->Init(this, m_pCom, pParentWnd, m_pStatusDlg);
-
-			// Copy the protocol's comments across to the Supervisor.
-			m_csProtocolComment = m_pGMA160Protocol->m_csComment;
+		case 10:	// GM A160
+			m_pProtocol = new CGMA160Protocol(m_pStatusDlg, this, m_bInteract);
 			break;
-	
-	default:
+
+		default:
+			m_pProtocol = NULL;
 			break;
 	}
 
+	if (m_pProtocol != NULL) {
+		m_pProtocol->InitializeSupportedValues(m_pEcuData);
+		m_pProtocol->Init(m_pCom);
+	}
+
 }
+
+// The supervisor is a hidden window. This is to enable it to receive
+// messages from itself and the serial port class.
+BOOL CSupervisor::CreateProtocolWnd(CWnd* pParentWnd)
+{
+	// TODO: Add your specialized code here and/or call the base class
+	DWORD	dwStyle = WS_BORDER | WS_CAPTION | WS_CHILD;
+	RECT	rect;
+	UINT nID = 67; // It's my house number!
+
+	rect.top = 0;
+	rect.bottom = 50;
+	rect.left = 0;
+	rect.right = 50;
+
+	return Create(NULL, "ECUCommunications Supervisor", dwStyle, rect, pParentWnd, nID, NULL);
+}
+
+BEGIN_MESSAGE_MAP(CSupervisor, CWnd)
+	//{{AFX_MSG_MAP(CGM1992PontiacProtocol)
+		// NOTE - the ClassWizard will add and remove mapping macros here.
+	ON_MESSAGE(WM_COMM_RXCHAR, OnCharReceived)
+	ON_WM_TIMER()
+	//}}AFX_MSG_MAP
+END_MESSAGE_MAP()
 
 void CSupervisor::PumpMessages()
 {
@@ -367,40 +224,111 @@ void CSupervisor::PumpMessages()
 	} 
 }
 
-// Updates the dialogs because of a data change
-void CSupervisor::UpdateDialog(void)
-{
-	// If we want kph, work it out
-	if (!m_bMiles)
-		ConvertMiles();
+// Handle the message from the serial port class.
+LONG CSupervisor::OnCharReceived(WPARAM ch, LPARAM BytesRead) {
+	if (m_pProtocol != NULL && BytesRead > 0) {
+		m_dwBytesReceived += BytesRead;
 
-	// If we want imperial temperatures, work them out
-	if (!m_bCentigrade)
-		ConvertDegrees();
+		CEcuData* const ecuData = new CEcuData(*m_pEcuData);
+		const BOOL modifiedEcuData = m_pProtocol->OnCharsReceived((const unsigned char* const) ch, (const DWORD) BytesRead, ecuData);
+		
+		if (modifiedEcuData == TRUE) {
+			m_pEcuData->copyFields(ecuData); // this is and should remain the only place where m_pEcuData is updated
+		}
+		delete ecuData;
 
-	m_pMainDlg->UpdateDialog();
+		if (modifiedEcuData == TRUE) {
+			ConvertMiles();
+			ConvertDegrees();
+			WriteCSV(false);
+			m_pMainDlg->Update(m_pEcuData);
+		}
+	}
+	return 0;
+}
+
+//WriteCSV(..) Writes CSV data to our log file.
+//If bTitle is true, the first title line is written, otherwise the data is written.
+void CSupervisor::WriteCSV(BOOL bTitle) {
+	if (m_file.m_pStream == NULL || (!bTitle && m_dwCSVRecord == 0)) {// i.e. no file open, or writing line before title
+		return;
+	}
+
+	CString	csBuf;
+	DWORD newCSVRecordNumber;
+	if (bTitle) {
+		csBuf = _T("PC-Timestamp,Sample");
+		csBuf += m_pEcuData->generateCsvLine(TRUE);
+		newCSVRecordNumber = 1;
+	}
+	else {
+		SYSTEMTIME localTime;
+
+		GetLocalTime(&localTime);
+
+		csBuf.Format(
+			_T("%04d-%02d-%02d %02d:%02d:%02d.%03d,%ld"),
+			localTime.wYear, localTime.wMonth, localTime.wDay, localTime.wHour, localTime.wMinute, localTime.wSecond, localTime.wMilliseconds,
+			m_dwCSVRecord
+		);
+		csBuf += m_pEcuData->generateCsvLine(FALSE);
+
+		newCSVRecordNumber = m_dwCSVRecord + 1;
+	}
+	csBuf += _T("\n"); // Line Feed because we're logging to disk
+	m_file.WriteString(csBuf);
+	m_dwCSVRecord = newCSVRecordNumber;
 }
 
 // Converts temps to degF
-void CSupervisor::ConvertDegrees(void)
-{
-	m_fStartWaterTemp	= (float)((m_fStartWaterTemp * (float)1.8) + (float)32.0);
-	m_fWaterTemp		= (float)((m_fWaterTemp * (float)1.8) + (float)32.0);
-	m_fOilTemp			= (float)((m_fOilTemp * (float)1.8) + (float)32.0);
-	m_fMATTemp			= (float)((m_fMATTemp * (float)1.8) + (float)32.0);
+void CSupervisor::ConvertDegrees(void) {
+	if (CEcuData::isValid(m_pEcuData->m_fStartWaterTemp)) {
+		m_pEcuData->m_fStartWaterTemp_inF = (float)((m_pEcuData->m_fStartWaterTemp * (float)1.8) + (float)32.0);
+	}
+	else if (CEcuData::isSupported(m_pEcuData->m_fStartWaterTemp)) {
+		m_pEcuData->m_fStartWaterTemp_inF = CEcuData::c_fSUPPORTED_BY_PROTOCOL;
+	}
+
+	if (CEcuData::isValid(m_pEcuData->m_fWaterTemp)) {
+		m_pEcuData->m_fWaterTemp_inF = (float)((m_pEcuData->m_fWaterTemp * (float)1.8) + (float)32.0);
+	}
+	else if (CEcuData::isSupported(m_pEcuData->m_fWaterTemp)) {
+		m_pEcuData->m_fWaterTemp_inF = CEcuData::c_fSUPPORTED_BY_PROTOCOL;
+	}
+
+	if (CEcuData::isValid(m_pEcuData->m_fOilTemp)) {
+		m_pEcuData->m_fOilTemp_inF = (float)((m_pEcuData->m_fOilTemp * (float)1.8) + (float)32.0);
+	}
+	else if (CEcuData::isSupported(m_pEcuData->m_fOilTemp)) {
+		m_pEcuData->m_fOilTemp_inF = CEcuData::c_fSUPPORTED_BY_PROTOCOL;
+	}
+
+	if (CEcuData::isValid(m_pEcuData->m_fMATTemp)) {
+		m_pEcuData->m_fMATTemp_inF = (float)((m_pEcuData->m_fMATTemp * (float)1.8) + (float)32.0);
+	}
+	else if (CEcuData::isSupported(m_pEcuData->m_fMATTemp)) {
+		m_pEcuData->m_fMATTemp_inF = CEcuData::c_fSUPPORTED_BY_PROTOCOL;
+	}
 }
 
 // Converts miles to kilometers
-void CSupervisor::ConvertMiles(void)
-{
-	m_iMPH = (int)((float)m_iMPH * (float)1.6); 
+void CSupervisor::ConvertMiles(void) {
+	if (CEcuData::isValid(m_pEcuData->m_iMPH)) {
+		m_pEcuData->m_iMPH_inKPH = (int)((float)m_pEcuData->m_iMPH * (float)1.609344f);
+	}
+	else if (CEcuData::isSupported(m_pEcuData->m_iMPH)) {
+		m_pEcuData->m_iMPH_inKPH = CEcuData::c_iSUPPORTED_BY_PROTOCOL;
+	}
 }
 
 // Writes a line of ASCII to the spy window
-void CSupervisor::WriteStatus(CString csText)
-{
-	csText = "Supervisor: " + csText;
-	m_pStatusDlg->WriteStatus(csText);
+void CSupervisor::WriteStatus(const CString csText) {
+	CString text = "Supervisor: " + csText;
+	m_pStatusDlg->WriteStatus(text);
+}
+
+void CSupervisor::WriteStatusLogged(const CString csText) {
+	m_pStatusDlg->WriteStatusTimeLogged(csText);
 }
 
 // Returns the current com port
@@ -410,7 +338,7 @@ void CSupervisor::SetCurrentPort(UINT nPort)
 	ASSERT(nPort != NULL);
 	Deallocate();
 	m_pCom->SetPort(nPort);
-	Init(m_pParentWnd, m_iModel);
+	Init(m_iModel);
 }
 
 // Returns the current com port
@@ -437,28 +365,43 @@ DWORD CSupervisor::GetWriteDelay(void)
 BOOL CSupervisor::Start(void)
 {
 	ASSERT(m_pCom != NULL);
+	ASSERT(m_pProtocol != NULL);
 	// This sets the com port up
-	if (!m_pCom->StartMonitoring())
-		WriteStatus(_T("CSupervisor- Failed to start the Com Port"));
-	else
-		WriteStatus(_T("CSupervisor- Com Port started"));
-	return TRUE;
-}
+	if (m_bHasRun == FALSE) {
+		if (!CreateProtocolWnd(m_pMainDlg)) {
+			WriteStatus(_T("Failed to create the protocol window"));
+			return FALSE;
+		}
 
-// Restarts the Comport.
-BOOL CSupervisor::Restart(void)
-{
-	ASSERT(m_pCom != NULL);
-	// This sets the com port up
-	if (!m_pCom->RestartMonitoring())
-	{
-		WriteStatus(_T("CSupervisor- Failed to restart the Com Port"));
-		return FALSE;
+		if (!m_pCom->StartMonitoring()) {
+			WriteStatus(_T("Failed to start the Com Port"));
+			return FALSE;
+		}
+		else {
+			WriteStatus(_T("Com Port started"));
+			m_bHasRun = TRUE;
+			m_pProtocol->Reset();
+			m_pProtocol->InitializeSupportedValues(m_pEcuData);
+
+			this->Interact(m_bInteract); // reset interact and start timer, if required
+
+			return TRUE;
+		}
 	}
-	else
-		WriteStatus(_T("CSupervisor- Com Port restarted"));
-		::SendMessage(m_ProtocolWnd, WM_PROT_CMD_RESETSTATE, (WPARAM) NULL, (LPARAM) NULL);
-	return TRUE;
+	else {
+		if (!m_pCom->RestartMonitoring()) {
+			WriteStatus(_T("Failed to restart the Com Port"));
+			return FALSE;
+		}
+		else {
+			WriteStatus(_T("Com Port restarted"));
+			m_pProtocol->Reset();
+			m_pProtocol->InitializeSupportedValues(m_pEcuData);
+
+			this->Interact(m_bInteract); // reset interact and start timer, if required
+		}
+		return TRUE;
+	}
 }
 
 // Stops the Comport.
@@ -468,13 +411,12 @@ BOOL CSupervisor::Stop(void)
 		return TRUE;
 
 	// This sets the com port up
-	if (!m_pCom->StopMonitoring())
-	{
-		WriteStatus(_T("CSupervisor- Failed to stop the Com Port"));
+	if (!m_pCom->StopMonitoring()) {
+		WriteStatus(_T("Failed to stop the Com Port"));
 		return FALSE;
 	}
 	else
-		WriteStatus(_T("CSupervisor- Com Port stopped"));
+		WriteStatus(_T("Com Port stopped"));
 	return TRUE;
 }
 
@@ -486,15 +428,79 @@ BOOL CSupervisor::ShutDown(void)
 }
 
 // Starts or stops csv logging to file
-BOOL CSupervisor::StartCSVLog(BOOL bStart)
-{
-	return (BOOL) ::SendMessage(m_ProtocolWnd, WM_PROT_CMD_STARTCSV, (WPARAM) bStart, (LPARAM) NULL);
+BOOL CSupervisor::StartCSVLog(BOOL bStart) {
+	CString csBuf = "";
+
+	if (!bStart) { // we want to close the logging file
+		if (m_file.m_hFile != CFile::hFileNull)	{
+			WriteStatusLogged("CSV Log file has been stopped");
+			m_dwCSVRecord = 0;
+			m_file.Close(); // close the logging file when we exit.
+		}
+		else {
+			WriteStatusLogged("CSV Log file is already closed");
+		}
+
+		return FALSE;
+	}
+
+	// We now must want to log to a file
+
+	// Construct our File Dialog
+	CFileDialog		Dialog(FALSE, "csv",
+		m_csCSVLogFile,
+		OFN_HIDEREADONLY | OFN_LONGNAMES | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT,
+		"log Files (*.csv)|*.csv|All Files (*.*)|*.*||", NULL);
+
+	// Change the title
+	Dialog.m_ofn.lpstrTitle = "Create/Open CSV Log File";
+
+	// Display the dialog box
+	if (Dialog.DoModal() == IDOK) {
+		m_csCSVLogFile = Dialog.GetPathName();
+
+		m_dwCSVRecord = 0;
+		if (!m_file.Open(m_csCSVLogFile, CFile::modeCreate | CFile::modeReadWrite | CFile::typeText)) {
+			csBuf.Format("Cannot open %s", m_csCSVLogFile.GetString());
+			WriteStatus(csBuf);
+			AfxMessageBox(csBuf, MB_OK | MB_ICONSTOP);
+			return FALSE;
+		}
+
+		WriteStatusLogged("CSV Log file has been opened");
+		WriteCSV(TRUE);
+	}
+	else { // User pressed cancel
+		WriteStatus("User cancelled CSV log file");
+	}
+
+	if (m_file.m_hFile != NULL) {
+		return TRUE;
+	}
+	else {
+		return FALSE;
+	}
 }
 
 // Requests whether FreeScan talks to the ECU or not
-void CSupervisor::Interact(BOOL bInteract)
-{
-	::SendMessage(m_ProtocolWnd, WM_PROT_CMD_SETINTERACT, (WPARAM) bInteract, (LPARAM) NULL);
+void CSupervisor::Interact(BOOL bInteract) {
+	if (bInteract) {
+		m_bInteract = TRUE;
+		if (m_pProtocol != NULL && m_pProtocol->GetTimeoutForPingDuringInteract() > 0 && ::IsWindow(m_hWnd)) {
+			SetTimer(WM_TIMER_EVT1, m_pProtocol->GetTimeoutForPingDuringInteract(), NULL);
+			// This is new. Provides a way of continually asking
+			// data from an ECU that doesn't have idle chatter.
+		}
+	}
+	else {
+		m_bInteract = FALSE;
+		if (::IsWindow(m_hWnd)) {
+			KillTimer(WM_TIMER_EVT1);
+		}
+	}
+	if (m_pProtocol != NULL) {
+		m_pProtocol->SetInteract(bInteract);
+	}
 }
 
 // Sets FreeScan to Metric or Imperial
@@ -522,40 +528,63 @@ BOOL CSupervisor::GetMiles(void)
 }
 
 // Gets the interact status
-BOOL CSupervisor::GetInteract(void)
-{
-	BOOL	bResult;
-	bResult = (BOOL) ::SendMessage(m_ProtocolWnd, WM_PROT_CMD_GETINTERACT, (WPARAM) TRUE, (LPARAM) FALSE);
-	return bResult;
+BOOL CSupervisor::GetInteract(void) {
+	return m_bInteract;
 }
 
 // Returns the current ECU Mode
-DWORD CSupervisor::GetCurrentMode(void)
-{
-#ifdef _DEBUG
-	return 1;// **** Test
-#else
-	return (DWORD) ::SendMessage(m_ProtocolWnd, WM_PROT_CMD_GETECUMODE, (WPARAM) NULL, (LPARAM) NULL);
-#endif // _DEBUG
+DWORD CSupervisor::GetCurrentMode(void) {
+	if (m_pProtocol != NULL) {
+		return m_pProtocol->GetCurrentMode();
+	}
+	return 0;
 }
 
 // This switches the mode number that is sent to the ECU. It changes the
 // behaviour of SendNextCommand(..).
-void CSupervisor::ECUMode(DWORD dwMode, unsigned char Data)
-{
-	::SendMessage(m_ProtocolWnd, WM_PROT_CMD_ECUMODE, (WPARAM) dwMode, (LPARAM) Data);
+void CSupervisor::ECUMode(DWORD dwMode, const unsigned char data) {
+	if (m_pProtocol != NULL) {
+		return m_pProtocol->SetECUMode(dwMode, data);
+	}
 }
 
 // Forces the protocol to send a shut-up command to the ECU.
-void CSupervisor::ForceShutUp(void)
-{
-	::SendMessage(m_ProtocolWnd, WM_PROT_CMD_FORCESHUTUP, (WPARAM) NULL, (LPARAM) NULL);
+void CSupervisor::ForceDataFromECU(void) {
+	if (m_pProtocol != NULL) {
+		return m_pProtocol->ForceDataFromECU();
+	}
+}
+
+const CEcuData *const CSupervisor::GetEcuData(void) {
+	return m_pEcuData;
+}
+
+DWORD CSupervisor::GetReceivedBytes() {
+	return m_dwBytesReceived;
+}
+
+DWORD CSupervisor::GetSentBytes() {
+	return m_dwBytesSent;
+}
+
+void CSupervisor::IncreaseSentBytes(const DWORD additionalBytesSent) {
+	m_dwBytesSent += additionalBytesSent;
+}
+
+void CSupervisor::OnTimer(UINT nIDEvent) {
+	WriteStatus("OnTimer");
+
+	if (m_pProtocol != NULL) {
+		m_pProtocol->OnTimer();
+	}
+
+	CWnd::OnTimer(nIDEvent);
 }
 
 // Sends a packet to the current parser for testing
 void CSupervisor::Test() 
 {
-	if (m_pEspritProtocol != NULL)
+	if (m_pProtocol != NULL && dynamic_cast<CEspritProtocol*>(m_pProtocol) != nullptr)
 	{
 		unsigned char buffer[] = {(unsigned char)0xF0,(unsigned char)0x96,(unsigned char)0x01,
 			(unsigned char)0x27,(unsigned char)0x89,(unsigned char)0x00,(unsigned char)0x08,(unsigned char)0x00,(unsigned char)0x60,(unsigned char)0x80,(unsigned char)0x3c,
@@ -568,9 +597,9 @@ void CSupervisor::Test()
 			(unsigned char)0x49,(unsigned char)0x2d,(unsigned char)0x00,(unsigned char)0x01,(unsigned char)0xc6,(unsigned char)0x01,(unsigned char)0x90,(unsigned char)0x20,
 			(unsigned char)0x1f};
 
-		m_pEspritProtocol->Parse(buffer, 68);
+		m_pProtocol->OnCharsReceived(buffer, 68, m_pEcuData);
 	}
-	else if (m_pGM1989CorvetteProtocol !=NULL)
+	else if (m_pProtocol != NULL && dynamic_cast<CGM1989CorvetteProtocol*>(m_pProtocol) != nullptr)
 	{
 	//0x80 0x95 0x01 
 
@@ -595,9 +624,9 @@ void CSupervisor::Test()
 			(unsigned char)0xe8,(unsigned char)0x7b,(unsigned char)0x07,(unsigned char)0x20,(unsigned char)0x02,(unsigned char)0x0c,(unsigned char)0x82,
 			(unsigned char)0x08};
 
-		m_pGM1989CorvetteProtocol->Parse(buffer, 67);
+		m_pProtocol->OnCharsReceived(buffer, 67, m_pEcuData);
 	}
-	else if (m_pGM1994CamaroZ28Protocol !=NULL)
+	else if (m_pProtocol != NULL && dynamic_cast<CGM1994CamaroZ28Protocol*>(m_pProtocol) != nullptr)
 	{
 		unsigned char buffer[] = {(unsigned char)0xF4,(unsigned char)0x92,(unsigned char)0x01,
 			(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x40,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,
@@ -610,9 +639,9 @@ void CSupervisor::Test()
 			(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x6f,
 			(unsigned char)0xab};
 
-		m_pGM1994CamaroZ28Protocol->Parse(buffer, 64);
+		m_pProtocol->OnCharsReceived(buffer, 64, m_pEcuData);
 	}
-	else if (m_pElanProtocol != NULL)
+	else if (m_pProtocol != NULL && dynamic_cast<CElanProtocol*>(m_pProtocol) != nullptr)
 	{
 		unsigned char buffer[] = {
 				(unsigned char)0xF4,(unsigned char)0x95,(unsigned char)0x01,
@@ -626,9 +655,9 @@ void CSupervisor::Test()
 				(unsigned char)0x02,(unsigned char)0x41,(unsigned char)0x01,(unsigned char)0xc9,(unsigned char)0x00,(unsigned char)0x17,(unsigned char)0x65,
 				(unsigned char)0x5c};
 
-		m_pElanProtocol->Parse(buffer, 67);
+		m_pProtocol->OnCharsReceived(buffer, 67, m_pEcuData);
 	}
-	else if (m_pGMA143Protocol != NULL)
+	else if (m_pProtocol != NULL && dynamic_cast<CGMA143Protocol*>(m_pProtocol) != nullptr)
 	{
 		unsigned char buffer[] = {
 				(unsigned char)0xF0,(unsigned char)0x99,(unsigned char)0x01,
@@ -642,9 +671,9 @@ void CSupervisor::Test()
 				(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,
 				(unsigned char)0x00,(unsigned char)0x1F,(unsigned char)0xEE,(unsigned char)0x07};
 
-		m_pGMA143Protocol->Parse(buffer, 71);
+		m_pProtocol->OnCharsReceived(buffer, 71, m_pEcuData);
 	}
-	else if (m_pGMA160Protocol != NULL)
+	else if (m_pProtocol != NULL && dynamic_cast<CGMA160Protocol*>(m_pProtocol) != nullptr)
 	{
 		unsigned char buffer[] = {
 				(unsigned char)0xF0,(unsigned char)0x95,(unsigned char)0x01,
@@ -667,7 +696,7 @@ void CSupervisor::Test()
 				(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x00,(unsigned char)0x7e,(unsigned char)0x00,(unsigned char)0xc5,(unsigned char)0x1f,(unsigned char)0xff,
 				(unsigned char)0x20,(unsigned char)0x20,(unsigned char)0x02,(unsigned char)0x54,(unsigned char)0x6f,(unsigned char)0x02,(unsigned char)0x00,(unsigned char)0x6a};
 */
-		m_pGMA160Protocol->Parse(buffer, 67);
+		m_pProtocol->OnCharsReceived(buffer, 67, m_pEcuData);
 	}
 	else
 	{

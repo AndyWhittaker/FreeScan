@@ -4,13 +4,18 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// RawMode00.h : header file
-//
+
+#include "BaseDefines.h"
+
+#include <afxwin.h>
+#include <afxdlgs.h>
+
+#include "EcuData.h"
+#include "Resource.h"
+#include "SupervisorInterface.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CRawMode00 dialog
-class CFreeScanDlg;
-class CSupervisor;
 
 class CRawMode00 : public CPropertyPage
 {
@@ -22,6 +27,7 @@ public:
 	~CRawMode00();
 
 // Dialog Data
+private:
 	//{{AFX_DATA(CRawMode00)
 	enum { IDD = IDD_RAWHEX_0 };
 	CEdit	m_0a_db02;
@@ -39,21 +45,21 @@ public:
 	CEdit	m_05_db00;
 	//}}AFX_DATA
 
-	CFreeScanDlg*	m_pMainDlg; // Base Dialog Pointer.
+	CSupervisorInterface* m_pSupervisor;
 
 // Overrides
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(CRawMode00)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
 // Implementation
 public:
-	void Refresh(void);
+	void Refresh(const CEcuData* const ecuData);
+	void RegisterSupervisor(CSupervisorInterface* const pSupervisor);
 
-protected:
-	CSupervisor* GetSupervisor(void); // returns a pointer to the Supervisor
+private:
 	// Generated message map functions
 	//{{AFX_MSG(CRawMode00)
 		// NOTE: the ClassWizard will add member functions here

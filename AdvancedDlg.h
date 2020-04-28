@@ -4,15 +4,15 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// AdvancedDlg.h : header file
-//
+
+#include "BaseDefines.h"
 
 #include "TTPropertyPage.h" // Our Tooltip Class
+#include "EcuData.h"
+#include "SupervisorInterface.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CAdvancedDlg dialog
-class CFreeScanDlg;
-class CSupervisor;
 
 class CAdvancedDlg : public CTTPropertyPage
 {
@@ -23,6 +23,7 @@ public:
 	CAdvancedDlg();
 	~CAdvancedDlg();
 
+private:
 // Dialog Data
 	//{{AFX_DATA(CAdvancedDlg)
 	enum { IDD = IDD_ADVANCED };
@@ -32,23 +33,21 @@ public:
 	CEdit	m_DesiredIdle;
 	//}}AFX_DATA
 
-	CFreeScanDlg*	m_pMainDlg; // Base Dialog Pointer.
+	CSupervisorInterface*	m_pSupervisor;
 
 // Overrides
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(CAdvancedDlg)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
 // Implementation
 public:
-	void Refresh(void); // Updates all of our controls
-protected:
-	CSupervisor* GetSupervisor(void); // returns a pointer to the Supervisor
-	CSupervisor* GetData(void); // return a pointer to the Data
-	BOOL GetInteract(void);
-	DWORD GetCurrentMode(void); // Returns the current ECU Mode
+	void Refresh(const CEcuData* const ecuData); // Updates all of our controls
+	void RegisterSupervisor(CSupervisorInterface* const pSupervisor);
+
+private:
 
 	// Generated message map functions
 	//{{AFX_MSG(CAdvancedDlg)
@@ -58,7 +57,6 @@ protected:
 	afx_msg void OnResetIAC();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
-
 };
 
 //{{AFX_INSERT_LOCATION}}

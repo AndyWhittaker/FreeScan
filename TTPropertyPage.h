@@ -4,11 +4,12 @@
 #if _MSC_VER >= 1000
 #pragma once
 #endif // _MSC_VER >= 1000
-// TTPropertyPage.h : header file
-//
 
-/////////////////////////////////////////////////////////////////////////////
-// CTTPropertyPage dialog
+#include "BaseDefines.h"
+
+#include <afxwin.h>
+#include <afxdlgs.h>
+
 #include "Resource.h"
 #include "OXToolTipCtrl.h"
 

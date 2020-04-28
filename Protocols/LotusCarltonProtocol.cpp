@@ -5,11 +5,9 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "..\FreeScan.h"
 #include "LotusCarltonProtocol.h"
 
-#include "..\Supervisor.h"
+#include "GMBaseFunctions.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -20,86 +18,23 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CLotusCarltonProtocol
 
-CLotusCarltonProtocol::CLotusCarltonProtocol()
-{
+CLotusCarltonProtocol::CLotusCarltonProtocol(CStatusWriter* pStatusWriter, CSupervisorInterface* pSupervisor, BOOL bInteract) : CBaseProtocol(pStatusWriter, pSupervisor, bInteract), m_parser(this) {
+	m_bTimeOut = FALSE;
+
+	Reset();
+}
+
+CLotusCarltonProtocol::~CLotusCarltonProtocol() {
+}
+
+void CLotusCarltonProtocol::InitializeSupportedValues(CEcuData* const ecuData) {
 	// Put your comments and release notes about the protocol here.
-	m_csComment.Format("Name: Lotus Carlton 6 Cylinder\nVersion v1.1\nDate: 1st November 2000\nImplemented by Andy Whittaker\nProtocol by Malcolm Robb\n*** Alpha Version ***.\n\nUse Force Data to start communications");
-
-	// Recall previous settings from the registry.
-	CWinApp* pApp = AfxGetApp();
-	m_bInteract = pApp->GetProfileInt("LotusCarltonProtocol", "Interact", FALSE);
-
-	m_pcom = NULL;
-	m_bTimeOut = FALSE; // Timeout
-	OnResetStateMachine(NULL,NULL);
-}
-
-CLotusCarltonProtocol::~CLotusCarltonProtocol()
-{
-	// Save our settings to the registry
-	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("LotusCarltonProtocol", "Interact", m_bInteract);
-
-	if(::IsWindow(m_hWnd))
-		KillTimer(WM_TIMER_EVT1);
-}
-
-
-BEGIN_MESSAGE_MAP(CLotusCarltonProtocol, CWnd)
-	//{{AFX_MSG_MAP(CLotusCarltonProtocol)
-	ON_MESSAGE(WM_PROT_CMD_RESETSTATE, OnResetStateMachine)
-	ON_MESSAGE(WM_PROT_CMD_SETINTERACT, OnInteract)
-	ON_MESSAGE(WM_PROT_CMD_GETINTERACT, OnGetInteract)
-	ON_MESSAGE(WM_PROT_CMD_GETECUMODE, OnGetCurrentMode)
-	ON_MESSAGE(WM_PROT_CMD_FORCESHUTUP, OnForceShutUp)
-	ON_MESSAGE(WM_PROT_CMD_ECUMODE, OnECUMode)
-	ON_MESSAGE(WM_PROT_CMD_STARTCSV, OnStartCSV)
-	ON_MESSAGE(WM_COMM_RXCHAR, OnCharReceived)
-	ON_WM_TIMER()
-	//}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
-void CLotusCarltonProtocol::PumpMessages()
-{
-	MSG msg;
-	// if there is a message on the queue, then dispatch it
-	if(::PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE )) 
- 	{ 
-		::GetMessage(&msg, NULL, NULL, NULL);
-		::TranslateMessage(&msg);
-		::DispatchMessage(&msg);
-	} 
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Interfaces to this class
-
-// Initialises the Supervisor
-HWND CLotusCarltonProtocol::Init(CSupervisor* pSupervisor, CSerialPort* pcom, CWnd* pParentWnd, CStatusDlg* pStatusDlg)
-{
-	m_pSupervisor = pSupervisor; // our owner
-	m_pStatusDlg = pStatusDlg; // Debug Window
-	m_pcom = pcom; // assign our serial port pointer.
-
-	WriteStatus("Creating LotusCarlton Protocol Window");
-	CreateProtocolWnd(pParentWnd); // creates this window for communication messages
-
-	// This sets up the com port CSerialPort Object
-	// Note: Look in SerialPort.h for the defaults:
-	// We need 8192baud, 1 start, 1 stop and no parity.
-	// We pass the CSerialPort a this pointer because it
-	// needs to send messages to this window via the CWnd Object
-	if (!m_pcom->InitPort(this, NULL))
-		WriteStatus("Failed to initialise the Com Port");
-	else
-		WriteStatus("Com Port initialised");
-
-	return m_hWnd;
+	ecuData->m_csProtocolComment.Format("Name: Lotus Carlton 6 Cylinder\nVersion v1.1\nDate: 1st November 2000\nImplemented by Andy Whittaker\nProtocol by Malcolm Robb\n*** Alpha Version ***.\n\nUse Force Data to start communications");
+	m_parser.InitializeSupportedValues(ecuData);
 }
 
 // Resets the protocol state machine
-LONG CLotusCarltonProtocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
-{
+void CLotusCarltonProtocol::Reset() {
 	m_dwCurrentMode = 0;
 	m_dwRequestedMode = 1; // Mode we want next
 	m_bModeDone = TRUE; // Have we sent our mode request?
@@ -116,65 +51,25 @@ LONG CLotusCarltonProtocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
 	m_bReadCRC = FALSE;
 
 	m_bSentOnce = FALSE;
-
-	return 0;
-}
-
-// Requests whether FreeScan talks to the ECU or not
-LONG CLotusCarltonProtocol::OnInteract(WPARAM bInteract, LPARAM dummy)
-{
-	if (bInteract)
-	{
-		WriteStatus("Interaction with the ECU enabled.");
-		m_bInteract=TRUE;
-		SetTimer(WM_TIMER_EVT1, 1000, NULL);
-		// This is new. Provides a way of continually asking 
-		// data from an ECU that doesn't have idle chatter.
-	}
-	else
-	{
-		WriteStatus("In monitor mode, no interaction with ECU will be done.");
-		m_bInteract=FALSE;
-		if(::IsWindow(m_hWnd))
-			KillTimer(WM_TIMER_EVT1);
-	}
-	return 0;
 }
 
 // This switches the mode number that is sent to the ECU. It changes the
 // behaviour of SendNextCommand(..).
-LONG CLotusCarltonProtocol::OnECUMode(WPARAM dwMode, LPARAM Data)
-{
-	m_ucData = (unsigned char) Data; // data for ECU, e.g. Desired Idle
-	m_dwRequestedMode = (DWORD) dwMode; // Mode we want next
+void CLotusCarltonProtocol::SetECUMode(const DWORD dwMode, const unsigned char data) {
+	m_ucData = data; // data for ECU, e.g. Desired Idle
+	m_dwRequestedMode = dwMode; // Mode we want next
 	m_bModeDone = FALSE; // Have we sent our mode request?
-	return 0;
-}
-
-LONG CLotusCarltonProtocol::OnStartCSV(WPARAM bStart, LPARAM dummy)
-{
-	// call the base class function
-	return (LONG) StartCSVLog((BOOL) bStart);
-}
-
-// Gets the interact status
-LONG CLotusCarltonProtocol::OnGetInteract(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_bInteract;
 }
 
 // Returns the current ECU Mode
-LONG CLotusCarltonProtocol::OnGetCurrentMode(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_dwCurrentMode;
+DWORD CLotusCarltonProtocol::GetCurrentMode(void) {
+	return m_dwCurrentMode;
 }
 
 // Forces Shut-Up to be sent.
-LONG CLotusCarltonProtocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
-{
-	OnResetStateMachine(NULL,NULL);
+void CLotusCarltonProtocol::ForceDataFromECU() {
+	Reset();
 	SendMode0();
-	return (LONG) 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -184,7 +79,7 @@ LONG CLotusCarltonProtocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
 BOOL CLotusCarltonProtocol::SendIdle(void)
 { //0xf4 0x55, 0xB7
 	unsigned char	ucRequestIdle[] = { 0xf4, 0x55, 0xb7 }; // Idle
-	SetChecksum(ucRequestIdle, 3);
+	CGMBaseFunctions::SetChecksum(ucRequestIdle, 3);
 	WriteStatus("*** Sending Idle to ECU ***");
 	WriteToECU(ucRequestIdle, 3, FALSE); //No delay before transmit
 	return TRUE;
@@ -268,20 +163,13 @@ BOOL CLotusCarltonProtocol::SetDesiredIdle(unsigned char DesIdle)
 	unsigned char	ucRequestDesIdle[] = { 0xf4, 0x60, 0x04, 0x01, 0x01, 0x00, 0x00, 0x10, 0xff, 0x03, 0x90, 0x00, 0x00, 0x04 };
 	ucRequestDesIdle[10] = DesIdle;
 
-	SetChecksum(ucRequestDesIdle, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestDesIdle, 14);
 	CString buf;
 	buf.Format("*** Setting Desired Idle in ECU to %d RPM ***", (int)((DesIdle * 25) / 2));
 	WriteStatus(buf);
 	// ECU should confirm with 0xF4 0x56 0x04 0xB6
 	WriteToECU(ucRequestDesIdle, 14);
 	return TRUE;
-}
-
-// Write a string to the port - This can even write NULL characters
-void CLotusCarltonProtocol::WriteToECU(unsigned char* string, int stringlength, BOOL bDelay)
-{	
-	m_pSupervisor->m_dwBytesSent += stringlength;
-	m_pcom->WriteToPort(string, stringlength, bDelay);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -330,42 +218,18 @@ void CLotusCarltonProtocol::SendNextCommand(void)
 		SendMode1();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// CLotusCarltonProtocol message handlers
-
-// The supervisor is a hidden window. This is to enable it to receive
-// messages from itself and the serial port class.
-BOOL CLotusCarltonProtocol::CreateProtocolWnd(CWnd* pParentWnd) 
-{
-	// TODO: Add your specialized code here and/or call the base class
-	DWORD	dwStyle = WS_BORDER | WS_CAPTION | WS_CHILD;
-	RECT	rect;
-	UINT nID = 67; // It's my house number!
-
-	rect.top = 0;
-	rect.bottom = 50;
-	rect.left = 0;
-	rect.right = 50;
-	
-	return Create(NULL, "ECU LotusCarlton Communications Supervisor", dwStyle, rect, pParentWnd, nID, NULL);
-}
-
 // Handle the message from the serial port class.
-LONG CLotusCarltonProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
-{
-	 // convert passed variables
-	unsigned char*	pucRX = (unsigned char*) ch;
-	DWORD			uBytesRead = (DWORD) BytesRead;
-	
+BOOL CLotusCarltonProtocol::OnCharsReceived(const unsigned char* const buffer, const DWORD bytesRead, CEcuData* const ecuData) {
+	BOOL			updatedEcuData = FALSE;
+
 	unsigned char	ucRX; // current byte we are reading
 	CString			buf; // for status messages
 	UINT			uByteIndex;
 	
 	// we need a loop here to process all read bytes from serial port
-	for(uByteIndex = 0; uByteIndex < uBytesRead; uByteIndex++)
+	for(uByteIndex = 0; uByteIndex < bytesRead; uByteIndex++)
 	{
-		ucRX = pucRX[uByteIndex]; // index the read-in byte
-		m_pSupervisor->m_dwBytesReceived ++;
+		ucRX = buffer[uByteIndex]; // index the read-in byte
 
 		// Character received is returned in "ch", then copied as ucRX.
 
@@ -385,7 +249,7 @@ LONG CLotusCarltonProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 				{
 					buf.Format("%02x - Finding start header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Found main start header", ucRX);
@@ -398,7 +262,7 @@ LONG CLotusCarltonProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 				{// These headers must coincide with the Parser(..);
 					buf.Format("%02x - Unrecognised header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Header sent by ECU", ucRX);
@@ -418,7 +282,7 @@ LONG CLotusCarltonProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			// Received length
 			m_ucBuffer[1] = ucRX; // Length copied to buffer
 			
-			m_iLen = GetLength(ucRX);
+			m_iLen = CGMBaseFunctions::GetLength(ucRX);
 
 			if (m_iLen == 0)
 			{ // No Data so just read the CRC next time around
@@ -460,10 +324,10 @@ LONG CLotusCarltonProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			HandleTX(m_ucBuffer, m_iLen + 3);
 
 			// Now Parse it if checksum OK
-			if (CheckChecksum(m_ucBuffer, m_iLen + 3))
-				Parse(m_ucBuffer, m_iLen + 3);
-			else
-			{// may have lost our way, so reset to find header
+			if (CGMBaseFunctions::CheckChecksum(m_ucBuffer, m_iLen + 3)) {
+				updatedEcuData |= m_parser.Parse(m_ucBuffer, m_iLen + 3, ecuData);
+			}
+			else { // may have lost our way, so reset to find header
 				m_bFirstRead = TRUE;
 				WriteStatus("Checksum Error - Not Parsing !!! **** !!! **** !!!");
 			}
@@ -477,7 +341,12 @@ LONG CLotusCarltonProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 
 		} // if (m_bReadHeader)
 	} // for (..)
-	return 0;
+
+	return updatedEcuData;
+}
+
+DWORD CLotusCarltonProtocol::GetTimeoutForPingDuringInteract(void) {
+	return 1000; // we want 1000ms timeout
 }
 
 // Receives the buffer and decides what mode commands to send
@@ -485,7 +354,7 @@ int CLotusCarltonProtocol::HandleTX(unsigned char* buffer, int iLength)
 {
 	unsigned char	ucHeader = buffer[0];
 	unsigned char	ucMode = buffer[2];
-	unsigned char	ucMsg = buffer[3];
+//	unsigned char	ucMsg = buffer[3];
 	unsigned char	ucCRC = buffer[iLength - 1]; // Index 0
 
 	// There is a minor bug with this code. If we get a checksum error,
@@ -659,29 +528,18 @@ void CLotusCarltonProtocol::OnModeD4(void)
 	//	TRACE("From OnModeD4 - Mode 4 Data Detected\n");
 }
 
-BOOL CLotusCarltonProtocol::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext) 
-{
-	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
-}
-
 // This is used to request data from the ECU.
-void CLotusCarltonProtocol::OnTimer(UINT nIDEvent) 
-{
+void CLotusCarltonProtocol::OnTimer() {
 	WriteStatus("Timer");
 	if (!m_bInteract) return; // Don't want to transmit
 
-	//	return; // action blocked for now
-	
 	m_dwCurrentMode = 1;
 
-	if (m_bTimeOut)
-	{
+	if (m_bTimeOut == TRUE)	{
 		WriteStatus("From OnTimer - *** Time Out ***, sending next mode request");
 		SendNextCommand();
 	}
 
 	// Always set the timeout as true. Our data stream should reset it
 	m_bTimeOut = TRUE;
-
-	CWnd::OnTimer(nIDEvent);
 }

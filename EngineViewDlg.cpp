@@ -4,11 +4,6 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "FreeScan.h"
-#include "MainDlg.h"
-#include "Supervisor.h"
-
 #include "EngineViewDlg.h"
 
 #ifdef _DEBUG
@@ -46,7 +41,7 @@ CEngineViewDlg::CEngineViewDlg() : CTTPropertyPage(CEngineViewDlg::IDD)
 {
 	//{{AFX_DATA_INIT(CEngineViewDlg)
 	//}}AFX_DATA_INIT
-	m_pMainDlg = NULL;
+	m_pSupervisor = NULL;
 	m_bOneO2 = TRUE;	// True if only one O2 sensor
 }
 
@@ -62,171 +57,144 @@ void CEngineViewDlg::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 
 	//Updates the dialog.
-	Refresh();
+	if (m_pSupervisor != NULL) {
+		Refresh(m_pSupervisor->GetEcuData());
+	}
 }
 
-// Returns a pointer to the Supervisor
-CSupervisor* CEngineViewDlg::GetSupervisor(void)
-{
-	return m_pMainDlg->m_pSupervisor;
+static inline void renderField(CClientDC * const client, const int column, const int row, const char *const textFormat, const float fValue) {
+	if (!CEcuData::isValid(fValue)) {
+		client->TextOut(column, row  * HS, "N/A");
+	}
+	else {
+		CString buf;
+		buf.Format(textFormat, fValue);
+		client->TextOut(column, row  * HS, buf);
+	}
 }
 
-// Returns a pointer to the Supervisor
-CSupervisor* CEngineViewDlg::GetData(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
-
-// Returns the current ECU Mode
-DWORD CEngineViewDlg::GetCurrentMode(void)
-{
-	return GetSupervisor()->GetCurrentMode();
+static inline void renderField(CClientDC * const client, const int column, const int row, const char *const textFormat, const int iValue) {
+	if (!CEcuData::isValid(iValue)) {
+		client->TextOut(column, row  * HS, "N/A");
+	}
+	else {
+		CString buf;
+		buf.Format(textFormat, iValue);
+		client->TextOut(column, row  * HS, buf);
+	}
 }
 
 // Updates all of our controls
-void CEngineViewDlg::Refresh(void)
+void CEngineViewDlg::Refresh(const CEcuData* const ecuData)
 {
 // This draws the actual data to the screen
 	CClientDC	Client(&m_view);
 	Client.SetBkColor(RGB(0,0,180)); // sets the background colour
 	Client.SetTextColor(RGB(255,255,255));
 
-	CString buf;
-	DWORD	dwCurrentMode = GetCurrentMode();
+	LOGFONT lf;
+	Client.GetCurrentFont()->GetLogFont(&lf);
 
-	buf.Format("%04X", GetData()->m_iEpromID);
-	Client.TextOut(COLD1, 0  * HS, buf); // EPROM ID
+	lf.lfWeight = FW_NORMAL;
+	lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+	CFont font;
+	font.CreateFontIndirect(&lf);
+	Client.SelectObject(font);
+	
+	renderField(&Client, COLD1, 0, " %04X", ecuData->m_iEpromID);
 
-	buf.Format("%d    ", GetData()->m_iRPM);
-	Client.TextOut(COLD1, 1  * HS, buf); // RPM
+	renderField(&Client, COLD1, 1, "%5d", ecuData->m_iRPM);
 
-	buf.Format("%d  ", GetData()->m_iIACPosition);
-	Client.TextOut(COLD1, 2  * HS, buf); // IAC Position
+	renderField(&Client, COLD1, 2, "%5d", ecuData->m_iIACPosition);
 
-	buf.Format("%d  ", GetData()->m_iDesiredIdle);
-	Client.TextOut(COLD1, 3  * HS, buf); // Desired Idle
+	renderField(&Client, COLD1, 3, "%5d", ecuData->m_iDesiredIdle);
 
-	buf.Format("%d   ", GetData()->m_iMPH);
-	Client.TextOut(COLD1, 4  * HS, buf); // MPH
+	if (m_pSupervisor->GetMiles() == TRUE) {
+		renderField(&Client, COLD1, 4, "%5d", ecuData->m_iMPH);
+	}
+	else {
+		renderField(&Client, COLD1, 4, "%5d", ecuData->m_iMPH_inKPH);
+	}
 
-	buf.Format("%d   ", GetData()->m_iThrottlePos);
-	Client.TextOut(COLD1, 5  * HS, buf); // Throttle Pos
+	renderField(&Client, COLD1, 5, "%5d", ecuData->m_iThrottlePos);
 
-	if (GetData()->m_iEngineLoad != 0)
-		buf.Format("%d   ", GetData()->m_iEngineLoad);
-	else
-		buf.Format("  ");
-	Client.TextOut(COLD1, 6  * HS, buf); // Engine Load
+	renderField(&Client, COLD1, 6, "%5d", ecuData->m_iEngineLoad);
 
-	if (GetData()->m_fMAP != 0.0)
-		buf.Format("%5.3f ", GetData()->m_fMAP);
-	else
-		buf.Format(" ");
-	Client.TextOut(COLD1, 7  * HS, buf); // MAP
+	renderField(&Client, COLD1, 7, "%5.3f", ecuData->m_fMAP);
 
-	if (GetData()->m_fBaro != 0.0)
-		buf.Format("%5.3f ", GetData()->m_fBaro);
-	else
-		buf.Format(" ");
-	Client.TextOut(COLD1, 8  * HS, buf); // Barometer
+	renderField(&Client, COLD1, 8, "%5.3f", ecuData->m_fBaro);
 
-	buf.Format("%5.3f ", GetData()->m_fO2VoltsLeft);
-	Client.TextOut(COLD1, 9  * HS, buf); // O2 Volts Left
+	renderField(&Client, COLD1, 9, "%5.3f", ecuData->m_fO2VoltsLeft);
 
-	if (!m_bOneO2)
-		buf.Format("%5.3f ", GetData()->m_fO2VoltsRight);
-	else
-		buf.Format(" ");
-	Client.TextOut(COLD1, 10 * HS, buf); // O2 Volts Right
+	if (m_bOneO2 == FALSE) {
+		renderField(&Client, COLD1, 10, "%5.3f", ecuData->m_fO2VoltsRight);
+	}
+	else {
+		renderField(&Client, COLD1, 10, "     ", 0);
+	}
 
-	buf.Format("%d", GetData()->m_iRunTime);
-	Client.TextOut(COLD1, 11 * HS, buf); // Engine Run Time
+	renderField(&Client, COLD1, 11, "%5d", ecuData->m_iRunTime);
 
 	// Draw second column
-	if (GetData()->m_fStartWaterTemp != 0.0)
-		buf.Format("%3.0f  ", GetData()->m_fStartWaterTemp);
-	else
-		buf.Format(" ");
-	Client.TextOut(COLD2, 0  * HS, buf); // Start Temp
+	if (m_pSupervisor->GetCentigrade() == TRUE) {
+		renderField(&Client, COLD2, 0, "%3.0f", ecuData->m_fStartWaterTemp);
+		renderField(&Client, COLD2, 1, "%3.0f", ecuData->m_fWaterTemp);
+		renderField(&Client, COLD2, 2, "%3.0f", ecuData->m_fMATTemp);
+		if (CEcuData::isSupported(ecuData->m_fOilTemp)) {
+			renderField(&Client, COLD2, 3, "%3.0f", ecuData->m_fOilTemp);
+		}
+	}
+	else {
+		renderField(&Client, COLD2, 0, "%3.0f", ecuData->m_fStartWaterTemp_inF);
+		renderField(&Client, COLD2, 1, "%3.0f", ecuData->m_fWaterTemp_inF);
+		renderField(&Client, COLD2, 2, "%3.0f", ecuData->m_fMATTemp_inF);
+		if (CEcuData::isSupported(ecuData->m_fOilTemp)) {
+			renderField(&Client, COLD2, 3, "%3.0f", ecuData->m_fOilTemp_inF);
+		}
+	}
+	
+	renderField(&Client, COLD2, 4, "%5.1f", ecuData->m_fSparkAdvance);
+	
+	renderField(&Client, COLD2, 5, "%5.0f", ecuData->m_fKnockRetard);
+	
+	renderField(&Client, COLD2, 6, "%5d", ecuData->m_iKnockCount);
+	
+	if (CEcuData::isSupported(ecuData->m_fAirFlow)) {
+		renderField(&Client, COLD2, 7, "%5.0f", ecuData->m_fAirFlow);
+	}
+	
+	renderField(&Client, COLD2, 8, "%5.1f", ecuData->m_fBatteryVolts);
+	
+	renderField(&Client, COLD2, 9, "%5d", ecuData->m_iIntegratorL);
 
-	buf.Format("%3.0f  ", GetData()->m_fWaterTemp);
-	Client.TextOut(COLD2, 1  * HS, buf); // Coolant Temp
-
-	if (GetData()->m_fMATTemp != 0.0)
-		buf.Format("%3.0f  ", GetData()->m_fMATTemp);
-	else
-		buf.Format(" ");
-	Client.TextOut(COLD2, 2  * HS, buf); // MAT
-
-	if ( ((GetSupervisor()->m_bCentigrade == TRUE && GetData()->m_fOilTemp != 0.0) || (GetSupervisor()->m_bCentigrade == FALSE && GetData()->m_fOilTemp != 32.0)))
-		buf.Format("%3.0f ", GetData()->m_fOilTemp);
-	else
-		buf.Format(" ");
-	Client.TextOut(COLD2, 3  * HS, buf); // Oil Temp
-
-	buf.Format("%3.1f  ", GetData()->m_fSparkAdvance);
-	Client.TextOut(COLD2, 4  * HS, buf); // Spark Advance
-
-	if (GetData()->m_fKnockRetard != 0.0)
-		buf.Format("%3.0f ", GetData()->m_fKnockRetard);
-	else
-		buf.Format(" ");
-	Client.TextOut(COLD2, 5  * HS, buf); // Knock Retard
-
-	if (GetData()->m_iKnockCount != 0)
-		buf.Format("%d  ", GetData()->m_iKnockCount);
-	else
-		buf.Format(" ");
-	Client.TextOut(COLD2, 6  * HS, buf); // Knock Count
-
-	if (GetData()->m_fAirFlow != 0.0)
-		buf.Format("%4.0f ", GetData()->m_fAirFlow);
-	else
-		buf.Format("    ");
-	Client.TextOut(COLD2, 7  * HS, buf); // Air Flow
-
-	buf.Format("%3.1f ", GetData()->m_fBatteryVolts);
-	Client.TextOut(COLD2, 8  * HS, buf); // Battery Volts
-
-	buf.Format("%d   ", GetData()->m_iIntegratorL);
-	Client.TextOut(COLD2, 9  * HS, buf); // Integrator L
-
-	if (!m_bOneO2)
-		buf.Format("%d  ", GetData()->m_iIntegratorR);
-	else
-		buf.Format("    ");
-	Client.TextOut(COLD2, 10 * HS, buf); // Integrator R
+	if (m_bOneO2 == FALSE) {
+		renderField(&Client, COLD2, 10, "%5d", ecuData->m_iIntegratorR);
+	}
+	else {
+		renderField(&Client, COLD2, 10, "     ", 0);
+	}
 
 	// Draw third column.
-	buf.Format("%d ", GetData()->m_iCrankSensors);
-	Client.TextOut(COLD3, 0  * HS, buf); // Crank Sensors
+	renderField(&Client, COLD3, 0, "%5d", ecuData->m_iCrankSensors);
 
-	if (GetData()->m_fAFRatio != 0.0)
-		buf.Format("%3.1f", GetData()->m_fAFRatio);
-	else
-		buf.Format("   ");
-	Client.TextOut(COLD3, 1  * HS, buf); // A/F Ratio
+	renderField(&Client, COLD3, 1, "%5.1f", ecuData->m_fAFRatio);
 
-	if (GetData()->m_iBLM != 0)
-		buf.Format("%d    ", GetData()->m_iBLM);
-	else
-		buf.Format("   ");
-	Client.TextOut(COLD3, 2  * HS, buf); // BLM Contents
+	renderField(&Client, COLD3, 2, "%5d", ecuData->m_iBLM);
 
-	if (GetData()->m_iBLMCell != 0)
-		buf.Format("%d    ", GetData()->m_iBLMCell);
-	else
-		buf.Format("   ");
-	Client.TextOut(COLD3, 3  * HS, buf); // BLM Cell #
+	renderField(&Client, COLD3, 3, "%5d", ecuData->m_iBLMCell);
 
-	buf.Format("%d    ", GetData()->m_iRichLeanCounterL);
-	Client.TextOut(COLD3, 9  * HS, buf); // Rich/Lean L
+	renderField(&Client, COLD3, 9, "%5d", ecuData->m_iRichLeanCounterL);
 
-	if (!m_bOneO2)
-		buf.Format("%d    ", GetData()->m_iRichLeanCounterR);
-	else
-		buf.Format("    ");
-	Client.TextOut(COLD3, 10 * HS, buf); // Rich/Lean R
+	if (m_bOneO2 == FALSE) {
+		renderField(&Client, COLD2, 10, "%5d", ecuData->m_iRichLeanCounterR);
+	}
+	else {
+		renderField(&Client, COLD2, 10, "     ", 0);
+	}
+}
+
+void CEngineViewDlg::RegisterSupervisor(CSupervisorInterface* const pSupervisor) {
+	m_pSupervisor = pSupervisor;
 }
 
 BEGIN_MESSAGE_MAP(CEngineViewDlg, CTTPropertyPage)
@@ -252,8 +220,10 @@ void CEngineViewDlg::OnPaint()
 	
 	CClientDC	Client(&m_view);
 
+	const CEcuData *const ecuData = m_pSupervisor->GetEcuData();
+
 	// A simple check to see if we have only one O2 sensor fitted
-	if (GetData()->m_fO2VoltsRight == 0.0)
+	if (!CEcuData::isSupported(ecuData->m_fO2VoltsRight))
 		m_bOneO2 = TRUE;
 	else
 		m_bOneO2 = FALSE;
@@ -267,7 +237,7 @@ void CEngineViewDlg::OnPaint()
 	Client.TextOut(COLT1, 1  * HS,"RPM");
 	Client.TextOut(COLT1, 2  * HS,"IAC Position");
 	Client.TextOut(COLT1, 3  * HS,"Desired Idle");
-	if (GetSupervisor()->m_bMiles == TRUE)
+	if (m_pSupervisor->GetMiles() == TRUE)
 		Client.TextOut(COLT1, 4  * HS,"MPH");
 	else
 		Client.TextOut(COLT1, 4  * HS,"KPH");
@@ -276,13 +246,13 @@ void CEngineViewDlg::OnPaint()
 	Client.TextOut(COLT1, 6  * HS,"Engine Load");
 	Client.TextOut(COLT1, 7  * HS,"MAP");
 	Client.TextOut(COLT1, 8  * HS,"Barometer");
-	if (!m_bOneO2)
-	{
+	if (m_bOneO2 == FALSE) {
 		Client.TextOut(COLT1, 9  * HS,"O2 Volts L");
 		Client.TextOut(COLT1, 10 * HS,"O2 Volts R");
 	}
-	else
+	else {
 		Client.TextOut(COLT1, 9  * HS,"O2 Volts  ");
+	}
 
 	Client.TextOut(COLT1, 11 * HS,"Run Time");
 
@@ -295,38 +265,40 @@ void CEngineViewDlg::OnPaint()
 	Client.TextOut(COLT2, 0  * HS,"Start Temp");
 	Client.TextOut(COLT2, 1  * HS,"Coolant Temp");
 	Client.TextOut(COLT2, 2  * HS,"Mass Air Temp");
-	if ( ((GetSupervisor()->m_bCentigrade == TRUE && GetData()->m_fOilTemp != 0.0) || (GetSupervisor()->m_bCentigrade == FALSE && GetData()->m_fOilTemp != 32.0)))
-	{
+	if (CEcuData::isSupported(ecuData->m_fOilTemp)) {
 		Client.TextOut(COLT2, 3  * HS,"Oil Temp");
 	}
 	Client.TextOut(COLT2, 4  * HS,"Spark Advance");
 	Client.TextOut(COLT2, 5  * HS,"Knock Retard");
 	Client.TextOut(COLT2, 6  * HS,"Knock Count");
-	Client.TextOut(COLT2, 7  * HS,"Air Flow");
+	
+	if (CEcuData::isSupported(ecuData->m_fAirFlow)) {
+		Client.TextOut(COLT2, 7 * HS, "Air Flow");
+	}
 	Client.TextOut(COLT2, 8  * HS,"Battery Volts");
-	if (!m_bOneO2)
-	{
+	if (m_bOneO2 == FALSE) {
 		Client.TextOut(COLT2, 9  * HS,"Integrator L");
 		Client.TextOut(COLT2, 10 * HS,"Integrator R");
 	}
-	else
+	else {
 		Client.TextOut(COLT2, 9  * HS,"Integrator  ");
-
-	if (GetSupervisor()->m_bCentigrade == TRUE)
-	{
-		Client.TextOut(COLT2 + 137, 0  * HS,"°C");
-		Client.TextOut(COLT2 + 137, 1  * HS,"°C");
-		Client.TextOut(COLT2 + 137, 2  * HS,"°C");
-		if (GetData()->m_fOilTemp != 0.0)
-			Client.TextOut(COLT2 + 137, 3  * HS,"°C");
 	}
-	else
-	{
-		Client.TextOut(COLT2 + 137, 0  * HS,"°F");
-		Client.TextOut(COLT2 + 137, 1  * HS,"°F");
-		Client.TextOut(COLT2 + 137, 2  * HS,"°F");
-		if (GetData()->m_fOilTemp != 32.0)
-			Client.TextOut(COLT2 + 137, 3  * HS,"°F");
+
+	if (m_pSupervisor->GetCentigrade() == TRUE)	{
+		Client.TextOut(COLT2 + 130, 0  * HS,"°C");
+		Client.TextOut(COLT2 + 130, 1  * HS,"°C");
+		Client.TextOut(COLT2 + 130, 2  * HS,"°C");
+		if (CEcuData::isSupported(ecuData->m_fOilTemp)) {
+			Client.TextOut(COLT2 + 130, 3 * HS, "°C");
+		}
+	}
+	else {
+		Client.TextOut(COLT2 + 130, 0  * HS,"°F");
+		Client.TextOut(COLT2 + 130, 1  * HS,"°F");
+		Client.TextOut(COLT2 + 130, 2  * HS,"°F");
+		if (CEcuData::isSupported(ecuData->m_fOilTemp)) {
+			Client.TextOut(COLT2 + 130, 3 * HS, "°F");
+		}
 	}
 
 	// draw a vertical partition.
@@ -339,15 +311,15 @@ void CEngineViewDlg::OnPaint()
 	Client.TextOut(COLT3, 1  * HS,"A/F Ratio");
 	Client.TextOut(COLT3, 2  * HS,"BLM Contents");
 	Client.TextOut(COLT3, 3  * HS,"BLM Cell #");
-	if (!m_bOneO2)
-	{
+	if (m_bOneO2 == FALSE) {
 		Client.TextOut(COLT3, 9  * HS,"Rich/Lean L");
 		Client.TextOut(COLT3, 10 * HS,"Rich/Lean R");
 	}
-	else
-		Client.TextOut(COLT3, 9  * HS,"Rich/Lean  ");
+	else {
+		Client.TextOut(COLT3, 9 * HS, "Rich/Lean  ");
+	}
 
-	Refresh(); // update the dynamic data
+	Refresh(ecuData); // update the dynamic data
 	
 	// Do not call CTTPropertyPage::OnPaint() for painting messages
 }

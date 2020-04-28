@@ -3,11 +3,6 @@
 // (c) 1996-99 Andy Whittaker, Chester, England. 
 // mail@andywhittaker.com
 
-#include "stdafx.h"
-#include "FreeScan.h"
-#include "MainDlg.h"
-#include "Supervisor.h"
-
 #include "TCodesDlg.h"
 
 #ifdef _DEBUG
@@ -25,7 +20,7 @@ CTCodesDlg::CTCodesDlg() : CPropertyPage(CTCodesDlg::IDD)
 {
 	//{{AFX_DATA_INIT(CTCodesDlg)
 	//}}AFX_DATA_INIT
-	m_pMainDlg = NULL;
+	m_pSupervisor = NULL;
 }
 
 CTCodesDlg::~CTCodesDlg()
@@ -41,29 +36,13 @@ void CTCodesDlg::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 
 	//Updates the dialog.
-	Refresh();
-}
-
-// Returns a pointer to the Supervisor
-CSupervisor* CTCodesDlg::GetSupervisor(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
-
-// Returns a pointer to the Supervisor
-CSupervisor* CTCodesDlg::GetData(void)
-{
-	return m_pMainDlg->m_pSupervisor;
-}
-
-// Returns if the ECU is interactive
-BOOL CTCodesDlg::GetInteract(void)
-{
-	return GetSupervisor()->GetInteract();
+	if (m_pSupervisor != NULL) {
+		Refresh(m_pSupervisor->GetEcuData());
+	}
 }
 
 // Populates a ListBox with a CString
-void CTCodesDlg::FillListBox(CListBox& lbT, CString& csT)
+void CTCodesDlg::FillListBox(CListBox& lbT, const CString& csT)
 {
 	lbT.ResetContent();
 	// parse the CString Buffer
@@ -71,8 +50,7 @@ void CTCodesDlg::FillListBox(CListBox& lbT, CString& csT)
 	csTemp = csT;
 	int		iIndex=0;
 
-	while (iIndex != -1)
-	{
+	while (iIndex != -1) {
 		iIndex = csTemp.Find('\n');
 		lbT.AddString(csTemp.SpanExcluding("\n"));
 		csTemp.Delete(0, iIndex+1);
@@ -86,15 +64,19 @@ BEGIN_MESSAGE_MAP(CTCodesDlg, CPropertyPage)
 END_MESSAGE_MAP()
 
 // Updates all of our controls
-void CTCodesDlg::Refresh(void)
-{
+void CTCodesDlg::Refresh(const CEcuData* const ecuData) {
 	//CListBox
 	m_TList.ResetContent();
 
-	FillListBox(m_TList, GetData()->m_csDTC);
+	if (ecuData->m_csDTC.GetLength() > 0) {
+		FillListBox(m_TList, ecuData->m_csDTC);
+	}
+	else {
+		FillListBox(m_TList, "DTCs are not supported by this protocol.");
+	}
 
 	// Hide the buttons that don't work when not interactive
-	if (GetInteract())
+	if (m_pSupervisor->GetInteract())
 	{
 		m_ResetDTC.EnableWindow(TRUE);
 	}
@@ -104,11 +86,15 @@ void CTCodesDlg::Refresh(void)
 	}
 }
 
+void CTCodesDlg::RegisterSupervisor(CSupervisorInterface* const pSupervisor) {
+	m_pSupervisor = pSupervisor;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CTCodesDlg message handlers
 
 void CTCodesDlg::OnResetdtc() 
 {
 	// Sends the ECU command to reset the fault codes
-	GetSupervisor()->ECUMode(ECU_CLEAR_DTCS);
+	m_pSupervisor->ECUMode(ECU_CLEAR_DTCS);
 }

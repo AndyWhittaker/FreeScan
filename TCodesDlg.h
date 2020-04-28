@@ -4,13 +4,18 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// TCodesDlg.h : header file
-//
+
+#include "BaseDefines.h"
+
+#include <afxwin.h>
+#include <afxdlgs.h>
+
+#include "EcuData.h"
+#include "resource.h"
+#include "SupervisorInterface.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CTCodesDlg dialog
-class CFreeScanDlg;
-class CSupervisor;
 
 class CTCodesDlg : public CPropertyPage
 {
@@ -22,30 +27,29 @@ public:
 	~CTCodesDlg();
 
 // Dialog Data
+private:
 	//{{AFX_DATA(CTCodesDlg)
 	enum { IDD = IDD_TCODES };
 	CButton	m_ResetDTC;
 	CListBox	m_TList;
 	//}}AFX_DATA
 
-	CFreeScanDlg*	m_pMainDlg; // Base Dialog Pointer.
-
-	void Refresh(void);
-protected:
-	BOOL GetInteract(void);// Returns if the ECU is interactive
+	CSupervisorInterface* m_pSupervisor;
 
 // Overrides
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(CTCodesDlg)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
+public:
+	void Refresh(const CEcuData* const ecuData);
+	void RegisterSupervisor(CSupervisorInterface* const pSupervisor);
+
 // Implementation
-protected:
-	CSupervisor* GetSupervisor(void); // returns a pointer to the Supervisor
-	CSupervisor* GetData(void); // return a pointer to the Data
-	void FillListBox(CListBox& lbT, CString& csT);// Populates a ListBox with a CString
+private:
+	void FillListBox(CListBox& lbT, const CString& csT);// Populates a ListBox with a CString
 	// Generated message map functions
 	//{{AFX_MSG(CTCodesDlg)
 	afx_msg void OnResetdtc();

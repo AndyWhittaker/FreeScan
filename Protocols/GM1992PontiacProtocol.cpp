@@ -5,11 +5,9 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "..\FreeScan.h"
 #include "GM1992PontiacProtocol.h"
 
-#include "..\Supervisor.h"
+#include "GMBaseFunctions.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -20,83 +18,21 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CGM1992PontiacProtocol
 
-CGM1992PontiacProtocol::CGM1992PontiacProtocol()
-{
+CGM1992PontiacProtocol::CGM1992PontiacProtocol(CStatusWriter* pStatusWriter, CSupervisorInterface* pSupervisor, BOOL bInteract) : CBaseProtocol(pStatusWriter, pSupervisor, bInteract), m_parser(this) {
+	Reset();
+}
+
+CGM1992PontiacProtocol::~CGM1992PontiacProtocol() {
+}
+
+void CGM1992PontiacProtocol::InitializeSupportedValues(CEcuData* const ecuData) {
 	// Put your comments and release notes about the protocol here.
-	m_csComment.Format("Name: GM816B 1992 Pontiac 3.2\nVersion v1.3\nDate: 20th May 2000\nEngine Usage:\n3.4L PFI   (LQ1)   (VIN=X)   92           W-CAR\n3.4L PFI   (LQ1)   (VIN=X)   93           W-CAR\n3.1L PFI   (LH0)   (VIN=T)   93    1W,2W,3W,4W -CAR\n3.1L PFI   (LH0)   (VIN=T)   94           1W\nImplemented by Andy Whittaker.\nProtocol by B. Henson");
-
-	// Recall previous settings from the registry.
-	CWinApp* pApp = AfxGetApp();
-	m_bInteract = pApp->GetProfileInt("GM1992PontiacProtocol", "Interact", FALSE);
-
-	m_pcom = NULL;
-
-	OnResetStateMachine(NULL,NULL);
-}
-
-CGM1992PontiacProtocol::~CGM1992PontiacProtocol()
-{
-	// Save our settings to the registry
-	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("GM1992PontiacProtocol", "Interact", m_bInteract);
-}
-
-
-BEGIN_MESSAGE_MAP(CGM1992PontiacProtocol, CWnd)
-	//{{AFX_MSG_MAP(CGM1992PontiacProtocol)
-		// NOTE - the ClassWizard will add and remove mapping macros here.
-	ON_MESSAGE(WM_PROT_CMD_RESETSTATE, OnResetStateMachine)
-	ON_MESSAGE(WM_PROT_CMD_SETINTERACT, OnInteract)
-	ON_MESSAGE(WM_PROT_CMD_GETINTERACT, OnGetInteract)
-	ON_MESSAGE(WM_PROT_CMD_ECUMODE, OnECUMode)
-	ON_MESSAGE(WM_PROT_CMD_GETECUMODE, OnGetCurrentMode)
-	ON_MESSAGE(WM_PROT_CMD_FORCESHUTUP, OnForceShutUp)
-	ON_MESSAGE(WM_PROT_CMD_STARTCSV, OnStartCSV)
-	ON_MESSAGE(WM_COMM_RXCHAR, OnCharReceived)
-	//}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
-void CGM1992PontiacProtocol::PumpMessages()
-{
-	MSG msg;
-	// if there is a message on the queue, then dispatch it
-	if(::PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE )) 
- 	{ 
-		::GetMessage(&msg, NULL, NULL, NULL);
-		::TranslateMessage(&msg);
-		::DispatchMessage(&msg);
-	} 
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Interfaces to this class
-
-// Initialises the Supervisor
-HWND CGM1992PontiacProtocol::Init(CSupervisor* pSupervisor, CSerialPort* pcom, CWnd* pParentWnd, CStatusDlg* pStatusDlg)
-{
-	m_pSupervisor = pSupervisor; // our owner
-	m_pStatusDlg = pStatusDlg; // Debug Window
-	m_pcom = pcom; // assign our serial port pointer.
-
-	WriteStatus("Creating GM1992Pontiac Protocol Window");
-	CreateProtocolWnd(pParentWnd); // creates this window for communication messages
-
-	// This sets up the com port CSerialPort Object
-	// Note: Look in SerialPort.h for the defaults:
-	// We need 8192baud, 1 start, 1 stop and no parity.
-	// We pass the CSerialPort a this pointer because it
-	// needs to send messages to this window via the CWnd Object
-	if (!m_pcom->InitPort(this, NULL))
-		WriteStatus("Failed to initialise the Com Port");
-	else
-		WriteStatus("Com Port initialised");
-
-	return m_hWnd;
+	ecuData->m_csProtocolComment.Format("Name: GM816B 1992 Pontiac 3.2\nVersion v1.4\nDate: 2020-04-21\nEngine Usage:\n3.4L PFI   (LQ1)   (VIN=X)   92           W-CAR\n3.4L PFI   (LQ1)   (VIN=X)   93           W-CAR\n3.1L PFI   (LH0)   (VIN=T)   93    1W,2W,3W,4W -CAR\n3.1L PFI   (LH0)   (VIN=T)   94           1W\nImplemented by Andy Whittaker.\nProtocol by B. Henson");
+	m_parser.InitializeSupportedValues(ecuData);
 }
 
 // Resets the protocol state machine
-LONG CGM1992PontiacProtocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
-{
+void CGM1992PontiacProtocol::Reset() {
 	m_dwCurrentMode = 0;
 	m_dwRequestedMode = 1; // Mode we want next
 	m_bModeDone = TRUE; // Have we sent our mode request?
@@ -114,60 +50,24 @@ LONG CGM1992PontiacProtocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
 	m_bReadCRC = FALSE;
 
 	m_bSentOnce = FALSE;
-
-	return 0;
-}
-
-// Requests whether FreeScan talks to the ECU or not
-LONG CGM1992PontiacProtocol::OnInteract(WPARAM bInteract, LPARAM dummy)
-{
-	if (bInteract)
-	{
-		WriteStatus("Interaction with the ECU enabled.");
-		m_bInteract=TRUE;
-	}
-	else
-	{
-		WriteStatus("In monitor mode, no interaction with ECU will be done.");
-		m_bInteract=FALSE;
-	}
-	return 0;
 }
 
 // This switches the mode number that is sent to the ECU. It changes the
 // behaviour of SendNextCommand(..).
-LONG CGM1992PontiacProtocol::OnECUMode(WPARAM dwMode, LPARAM Data)
-{
-	m_ucData = (unsigned char) Data; // data for ECU, e.g. Desired Idle
-	m_dwRequestedMode = (DWORD) dwMode; // Mode we want next
+void CGM1992PontiacProtocol::SetECUMode(const DWORD dwMode, const unsigned char data) {
+	m_ucData = data; // data for ECU, e.g. Desired Idle
+	m_dwRequestedMode = dwMode; // Mode we want next
 	m_bModeDone = FALSE; // Have we sent our mode request?
-	return 0;
-}
-
-LONG CGM1992PontiacProtocol::OnStartCSV(WPARAM bStart, LPARAM dummy)
-{
-	// call the base class function
-	return (LONG) StartCSVLog((BOOL) bStart);
-}
-
-// Gets the interact status
-LONG CGM1992PontiacProtocol::OnGetInteract(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_bInteract;
 }
 
 // Returns the current ECU Mode
-LONG CGM1992PontiacProtocol::OnGetCurrentMode(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_dwCurrentMode;
+DWORD CGM1992PontiacProtocol::GetCurrentMode(void) {
+	return m_dwCurrentMode;
 }
 
-// Forces Shut-Up to be sent.
-LONG CGM1992PontiacProtocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
-{
+void CGM1992PontiacProtocol::ForceDataFromECU(void) {
 	WriteStatus("Forcing ECU with a shut-up");
-	SendModeShutUp();
-	return (LONG) 0;
+	SendMode8_ShutUp();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -177,18 +77,18 @@ LONG CGM1992PontiacProtocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
 BOOL CGM1992PontiacProtocol::SendIdle(void)
 { //0xf4 0x56, 0x00, 0xB6
 	unsigned char	ucRequestIdle[] = { 0xf4, 0x56, 0x00, 0xb6 }; // Idle
-	SetChecksum(ucRequestIdle, 4);
+	CGMBaseFunctions::SetChecksum(ucRequestIdle, 4);
 	WriteStatus("*** Sending Idle to ECU ***");
 	WriteToECU(ucRequestIdle, 4, FALSE); //No delay before transmit
 	return TRUE;
 }
 
 // Sends the shut-up command to the ECU
-BOOL CGM1992PontiacProtocol::SendModeShutUp(void)
+BOOL CGM1992PontiacProtocol::SendMode8_ShutUp(void)
 { //0xf4 0x56 0x08 0xae
-	unsigned char	ucRequestMode0[] = { 0xf4, 0x56, 0x08, 0xae }; //
-	WriteStatus("*** Sending Shut-Up to ECU ***");
-	WriteToECU(ucRequestMode0, 4);
+	unsigned char	ucRequestMode8[] = { 0xf4, 0x56, 0x08, 0xae }; //
+	WriteStatus("*** Sending Mode8 (DISABLE COMMUNICATIONS/Shut-Up) to ECU ***");
+	WriteToECU(ucRequestMode8, 4);
 	return TRUE;
 }
 
@@ -196,7 +96,7 @@ BOOL CGM1992PontiacProtocol::SendModeShutUp(void)
 BOOL CGM1992PontiacProtocol::SendMode1_0(void)
 { //0xf4 0x57 0x01 0x00 0xB9
 	unsigned char	ucRequestMode1_0[] = { 0xf4, 0x57, 0x01, 0x00, 0xb4 }; //
-	SetChecksum(ucRequestMode1_0, 5);
+	CGMBaseFunctions::SetChecksum(ucRequestMode1_0, 5);
 	WriteStatus("*** Requesting Mode 1 Msg 0 from ECU ***");
 	WriteToECU(ucRequestMode1_0, 5);
 	return TRUE;
@@ -206,7 +106,7 @@ BOOL CGM1992PontiacProtocol::SendMode1_0(void)
 BOOL CGM1992PontiacProtocol::ReceiveDTCs(void)
 { //0xf4 0x57 0x01 0x00 0xB9
 	unsigned char	ucRequestMode1_0[] = { 0xf4, 0x57, 0x01, 0x00, 0xb4 }; //
-	SetChecksum(ucRequestMode1_0, 5);
+	CGMBaseFunctions::SetChecksum(ucRequestMode1_0, 5);
 	WriteStatus("*** Requesting Mode 1 Msg 0 from ECU ***");
 	WriteToECU(ucRequestMode1_0, 5);
 	return TRUE;
@@ -216,7 +116,7 @@ BOOL CGM1992PontiacProtocol::ReceiveDTCs(void)
 BOOL CGM1992PontiacProtocol::ClearDTCs(void)
 { //0xf4 0x56 0x0a 0xac
 	unsigned char	ucRequestMode4[] = { 0xf4, 0x56, 0x0a, 0xac};
-	SetChecksum(ucRequestMode4, 4);
+	CGMBaseFunctions::SetChecksum(ucRequestMode4, 4);
 	// ECU should confirm with 0xf4 0x56 0x0a 0xB0
 	WriteStatus("*** Clearing DTCs in ECU ***");
 	WriteToECU(ucRequestMode4, 4);
@@ -227,7 +127,7 @@ BOOL CGM1992PontiacProtocol::ClearDTCs(void)
 BOOL CGM1992PontiacProtocol::ClearBLM(void)
 { //0xf4 0x60 0x04 0x00 0x00 0x10 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x9C
 	unsigned char	ucRequestMode4[] = { 0xf4, 0x60, 0x04, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x9c };
-	SetChecksum(ucRequestMode4, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestMode4, 14);
 	// ECU should confirm with 0xf4 0x56 0x04 0xB6
 	WriteStatus("*** Clearing BLM in ECU ***");
 	WriteToECU(ucRequestMode4, 14);
@@ -238,7 +138,7 @@ BOOL CGM1992PontiacProtocol::ClearBLM(void)
 BOOL CGM1992PontiacProtocol::ResetIAC(void)
 { //0xf4 0x60 0x04 0x00 0x00 0x20 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x8C
 	unsigned char	ucRequestMode4[] = { 0xf4, 0x60, 0x04, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8c };
-	SetChecksum(ucRequestMode4, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestMode4, 14);
 	// ECU should confirm with 0xf4 0x56 0x04 0xB6
 	WriteStatus("*** Resetting IAC in ECU ***");
 	WriteToECU(ucRequestMode4, 14);
@@ -256,20 +156,13 @@ BOOL CGM1992PontiacProtocol::SetDesiredIdle(unsigned char DesIdle)
 	unsigned char	ucRequestDesIdle[] = { 0xf4, 0x60, 0x04, 0x01, 0x01, 0x00, 0x00, 0x10, 0xff, 0x03, 0x90, 0x00, 0x00, 0x08 };
 	ucRequestDesIdle[10] = DesIdle;
 
-	SetChecksum(ucRequestDesIdle, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestDesIdle, 14);
 	CString buf;
 	buf.Format("*** Setting Desired Idle in ECU to %d RPM ***", (int)((DesIdle * 25) / 2));
 	WriteStatus(buf);
 	// ECU should confirm with 0xf4 0x56 0x04 0xB6
 	WriteToECU(ucRequestDesIdle, 14);
 	return TRUE;
-}
-
-// Write a string to the port - This can even write NULL characters
-void CGM1992PontiacProtocol::WriteToECU(unsigned char* string, int stringlength, BOOL bDelay)
-{	
-	m_pSupervisor->m_dwBytesSent += stringlength;
-	m_pcom->WriteToPort(string, stringlength, bDelay);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -284,7 +177,7 @@ void CGM1992PontiacProtocol::SendNextCommand(void)
 		switch (m_dwRequestedMode)
 		{
 		case 0:
-			SendModeShutUp();
+			SendMode8_ShutUp();
 			break;
 		case 1:
 			SendMode1_0();
@@ -314,44 +207,20 @@ void CGM1992PontiacProtocol::SendNextCommand(void)
 		SendMode1_0();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// CGM1992PontiacProtocol message handlers
-
-// The supervisor is a hidden window. This is to enable it to receive
-// messages from itself and the serial port class.
-BOOL CGM1992PontiacProtocol::CreateProtocolWnd(CWnd* pParentWnd) 
-{
-	// TODO: Add your specialized code here and/or call the base class
-	DWORD	dwStyle = WS_BORDER | WS_CAPTION | WS_CHILD;
-	RECT	rect;
-	UINT nID = 67; // It's my house number!
-
-	rect.top = 0;
-	rect.bottom = 50;
-	rect.left = 0;
-	rect.right = 50;
-	
-	return Create(NULL, "ECU GM1992Pontiac Communications Supervisor", dwStyle, rect, pParentWnd, nID, NULL);
-}
-
 // Handle the message from the serial port class.
-LONG CGM1992PontiacProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
-{
-	 // convert passed variables
-	unsigned char*	pucRX = (unsigned char*) ch;
-	DWORD			uBytesRead = (DWORD) BytesRead;
+BOOL CGM1992PontiacProtocol::OnCharsReceived(const unsigned char* const buffer, const DWORD bytesRead, CEcuData* const ecuData) {
+	BOOL			updatedEcuData = FALSE;
 	
 	unsigned char	ucRX; // current byte we are reading
 	CString			buf; // for status messages
 	UINT			uByteIndex;
 	
 	// we need a loop here to process all read bytes from serial port
-	for(uByteIndex = 0; uByteIndex < uBytesRead; uByteIndex++)
+	for(uByteIndex = 0; uByteIndex < bytesRead; uByteIndex++)
 	{
-		ucRX = pucRX[uByteIndex]; // index the read-in byte
-		m_pSupervisor->m_dwBytesReceived ++;
+		ucRX = buffer[uByteIndex]; // index the read-in byte
 
-		// Character received is returned in "ch", then copied as ucRX.
+		// Character received is returned in "buffer", then copied as ucRX.
 
 		// OK, we will receive our ECU bytes, one byte at a time. Therefore, we create
 		// what is, in effect, a state machine to build up the data buffer to pass to
@@ -365,11 +234,11 @@ LONG CGM1992PontiacProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			// Find the header byte in the chatter, i.e. F0 for an GM 1994 Camaro Z28.
 			if (m_bFirstRead)
 			{
-				if ((ucRX != ECU_HEADER_GM1992Pontiac) & (ucRX != ECU_CHATTER_HEADER_GM1992Pontiac))
+				if ((ucRX != ECU_HEADER_GM1992Pontiac) && (ucRX != ECU_CHATTER_HEADER_GM1992Pontiac))
 				{
 					buf.Format("%02x - Finding start header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Found main start header", ucRX);
@@ -378,11 +247,11 @@ LONG CGM1992PontiacProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			}
 			else
 			{
-				if((ucRX != ECU_HEADER_GM1992Pontiac) & (ucRX != ECU_CHATTER_HEADER_GM1992Pontiac) & (ucRX != 0x05) & (ucRX != 0x0a))
+				if((ucRX != ECU_HEADER_GM1992Pontiac) && (ucRX != ECU_CHATTER_HEADER_GM1992Pontiac) && (ucRX != 0x05) && (ucRX != 0x0a))
 				{// These headers must coincide with what the Parser(..) understands;
 					buf.Format("%02x - Unrecognised header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Header sent by ECU", ucRX);
@@ -402,7 +271,7 @@ LONG CGM1992PontiacProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			// Received length
 			m_ucBuffer[1] = ucRX; // Length copied to buffer
 			
-			m_iLen = GetLength(ucRX);
+			m_iLen = CGMBaseFunctions::GetLength(ucRX);
 
 			if (m_iLen == 0)
 			{ // No Data so just read the CRC next time around
@@ -444,10 +313,10 @@ LONG CGM1992PontiacProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			HandleTX(m_ucBuffer, m_iLen + 3);
 
 			// Now Parse it if checksum OK
-			if (CheckChecksum(m_ucBuffer, m_iLen + 3))
-				Parse(m_ucBuffer, m_iLen + 3);
-			else
-			{// may have lost our way, so reset to find header
+			if (CGMBaseFunctions::CheckChecksum(m_ucBuffer, m_iLen + 3)) {
+				updatedEcuData |= m_parser.Parse(m_ucBuffer, m_iLen + 3, ecuData);
+			}
+			else { // may have lost our way, so reset to find header
 				m_bFirstRead = TRUE;
 				WriteStatus("Checksum Error - Not Parsing !!! **** !!! **** !!!");
 			}
@@ -461,7 +330,8 @@ LONG CGM1992PontiacProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 
 		} // if (m_bReadHeader)
 	} // for(..)
-	return 0;
+
+	return updatedEcuData;
 }
 
 // Receives the buffer and decides what mode commands to send
@@ -494,7 +364,9 @@ int CGM1992PontiacProtocol::HandleTX(unsigned char* buffer, int iLength)
 		OnMode1Msg0();
 
 	// notify parent that a whole mode 1 Msg0 packet has been received
-	if ((iLength == 64) && (ucMode == 0x01))
+	if ((iLength == 64) && (ucMode == 0x01)) // <-- here seems to be a bug, because the length is actually 64 + 3 (3 added for CRC in OnCharReceived() )
+		OnModeD1Msg0();
+	if ((iLength == 64+3) && (ucMode == 0x01)) // <-- so here we notify on 64+3
 		OnModeD1Msg0();
 
 	// notify parent that a whole mode 3 request has been received
@@ -534,7 +406,8 @@ void CGM1992PontiacProtocol::OnIdle(void)
 	else
 	{
 		WriteStatus("From OnIdle - Idle Header Detected");
-		SendModeShutUp(); // Stop communications
+		//SendModeShutUp(); // Stop communications   <--- TH: this seems strange... why should we stop communicating
+		SendNextCommand();
 	}
 
 	//	TRACE("From OnIdle - Idle Header Detected\n");
@@ -636,9 +509,4 @@ void CGM1992PontiacProtocol::OnMode10(void)
 	if (!m_bInteract) return; // Don't want to transmit
 
 	//	TRACE("From OnMode10 - Mode 10 Header Detected\n");
-}
-
-BOOL CGM1992PontiacProtocol::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext) 
-{
-	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
 }

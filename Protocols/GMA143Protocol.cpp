@@ -5,11 +5,9 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "..\FreeScan.h"
 #include "GMA143Protocol.h"
 
-#include "..\Supervisor.h"
+#include "GMBaseFunctions.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -20,83 +18,21 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CGMA143Protocol
 
-CGMA143Protocol::CGMA143Protocol()
-{
+CGMA143Protocol::CGMA143Protocol(CStatusWriter* pStatusWriter, CSupervisorInterface* pSupervisor, BOOL bInteract) : CBaseProtocol(pStatusWriter, pSupervisor, bInteract), m_parser(this) {
+	Reset();
+}
+
+CGMA143Protocol::~CGMA143Protocol() {
+}
+
+void CGMA143Protocol::InitializeSupportedValues(CEcuData* const ecuData) {
 	// Put your comments and release notes about the protocol here.
-	m_csComment.Format("Name: GM413B Protocol\nVersion v1.0\nDate: 8th June 2000\n3300 MFI   (LG7)   (VIN=N)    91    A,N-CAR\n3300 MFI   (LG7)   (VIN=N)    92    3,4A 2,3,4N cars\n3300 MFI   (LG7)   (VIN=N)    93    3,4A 2,3,4N cars\nImplemented by Andy Whittaker.\n");
-
-	// Recall previous settings from the registry.
-	CWinApp* pApp = AfxGetApp();
-	m_bInteract = pApp->GetProfileInt("GMA143Protocol", "Interact", FALSE);
-
-	m_pcom = NULL;
-
-	OnResetStateMachine(NULL,NULL);
-}
-
-CGMA143Protocol::~CGMA143Protocol()
-{
-	// Save our settings to the registry
-	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("GMA143Protocol", "Interact", m_bInteract);
-}
-
-
-BEGIN_MESSAGE_MAP(CGMA143Protocol, CWnd)
-	//{{AFX_MSG_MAP(CGMA143Protocol)
-		// NOTE - the ClassWizard will add and remove mapping macros here.
-	ON_MESSAGE(WM_PROT_CMD_RESETSTATE, OnResetStateMachine)
-	ON_MESSAGE(WM_PROT_CMD_SETINTERACT, OnInteract)
-	ON_MESSAGE(WM_PROT_CMD_GETINTERACT, OnGetInteract)
-	ON_MESSAGE(WM_PROT_CMD_ECUMODE, OnECUMode)
-	ON_MESSAGE(WM_PROT_CMD_GETECUMODE, OnGetCurrentMode)
-	ON_MESSAGE(WM_PROT_CMD_FORCESHUTUP, OnForceShutUp)
-	ON_MESSAGE(WM_PROT_CMD_STARTCSV, OnStartCSV)
-	ON_MESSAGE(WM_COMM_RXCHAR, OnCharReceived)
-	//}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
-void CGMA143Protocol::PumpMessages()
-{
-	MSG msg;
-	// if there is a message on the queue, then dispatch it
-	if(::PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE )) 
- 	{ 
-		::GetMessage(&msg, NULL, NULL, NULL);
-		::TranslateMessage(&msg);
-		::DispatchMessage(&msg);
-	} 
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Interfaces to this class
-
-// Initialises the Supervisor
-HWND CGMA143Protocol::Init(CSupervisor* pSupervisor, CSerialPort* pcom, CWnd* pParentWnd, CStatusDlg* pStatusDlg)
-{
-	m_pSupervisor = pSupervisor; // our owner
-	m_pStatusDlg = pStatusDlg; // Debug Window
-	m_pcom = pcom; // assign our serial port pointer.
-
-	WriteStatus("Creating GMA143 Protocol Window");
-	CreateProtocolWnd(pParentWnd); // creates this window for communication messages
-
-	// This sets up the com port CSerialPort Object
-	// Note: Look in SerialPort.h for the defaults:
-	// We need 8192baud, 1 start, 1 stop and no parity.
-	// We pass the CSerialPort a this pointer because it
-	// needs to send messages to this window via the CWnd Object
-	if (!m_pcom->InitPort(this, NULL))
-		WriteStatus("Failed to initialise the Com Port");
-	else
-		WriteStatus("Com Port initialised");
-
-	return m_hWnd;
+	ecuData->m_csProtocolComment.Format("Name: GM413B Protocol\nVersion v1.0\nDate: 8th June 2000\n3300 MFI   (LG7)   (VIN=N)    91    A,N-CAR\n3300 MFI   (LG7)   (VIN=N)    92    3,4A 2,3,4N cars\n3300 MFI   (LG7)   (VIN=N)    93    3,4A 2,3,4N cars\nImplemented by Andy Whittaker.\n");
+	m_parser.InitializeSupportedValues(ecuData);
 }
 
 // Resets the protocol state machine
-LONG CGMA143Protocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
-{
+void CGMA143Protocol::Reset() {
 	m_dwCurrentMode = 0;
 	m_dwRequestedMode = 1; // Mode we want next
 	m_bModeDone = TRUE; // Have we sent our mode request?
@@ -113,58 +49,20 @@ LONG CGMA143Protocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
 	m_bReadCRC = FALSE;
 
 	m_bSentOnce = FALSE;
-
-	return 0;
 }
 
-// Requests whether FreeScan talks to the ECU or not
-LONG CGMA143Protocol::OnInteract(WPARAM bInteract, LPARAM dummy)
-{
-	if (bInteract)
-	{
-		WriteStatus("Interaction with the ECU enabled.");
-		m_bInteract=TRUE;
-	}
-	else
-	{
-		WriteStatus("In monitor mode, no interaction with ECU will be done.");
-		m_bInteract=FALSE;
-	}
-	return 0;
-}
-
-// This switches the mode number that is sent to the ECU. It changes the
-// behaviour of SendNextCommand(..).
-LONG CGMA143Protocol::OnECUMode(WPARAM dwMode, LPARAM Data)
-{
-	m_ucData = (unsigned char) Data; // data for ECU, e.g. Desired Idle
-	m_dwRequestedMode = (DWORD) dwMode; // Mode we want next
+void CGMA143Protocol::SetECUMode(const DWORD dwMode, const unsigned char data) {
+	m_ucData = data; // data for ECU, e.g. Desired Idle
+	m_dwRequestedMode = dwMode; // Mode we want next
 	m_bModeDone = FALSE; // Have we sent our mode request?
-	return 0;
-}
-
-LONG CGMA143Protocol::OnStartCSV(WPARAM bStart, LPARAM dummy)
-{
-	// call the base class function
-	return (LONG) StartCSVLog((BOOL) bStart);
-}
-
-// Gets the interact status
-LONG CGMA143Protocol::OnGetInteract(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_bInteract;
 }
 
 // Returns the current ECU Mode
-LONG CGMA143Protocol::OnGetCurrentMode(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_dwCurrentMode;
+DWORD CGMA143Protocol::GetCurrentMode(void) {
+	return m_dwCurrentMode;
 }
 
-// Forces Shut-Up to be sent.
-LONG CGMA143Protocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) 0;
+void CGMA143Protocol::ForceDataFromECU(void) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -210,7 +108,7 @@ BOOL CGMA143Protocol::SendMode1(void)
 BOOL CGMA143Protocol::ClearDTCs(void)
 {
 	unsigned char	ucRequestMode10[] = { 0xF0, 0x56, 0x0a, 0xb0};
-	SetChecksum(ucRequestMode10, 4);
+	CGMBaseFunctions::SetChecksum(ucRequestMode10, 4);
 	WriteStatus("*** Clearing DTCs in ECU ***");
 	WriteToECU(ucRequestMode10, 4);
 	return TRUE;
@@ -247,20 +145,13 @@ BOOL CGMA143Protocol::SetDesiredIdle(unsigned char DesIdle)
 	unsigned char	ucRequestDesIdle[] = { 0xf0, 0x60, 0x04, 0x01, 0x01, 0x00, 0x00, 0x10, 0xff, 0x03, 0x90, 0x00, 0x00, 0x08 };
 	ucRequestDesIdle[10] = DesIdle;
 
-	SetChecksum(ucRequestDesIdle, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestDesIdle, 14);
 	CString buf;
 	buf.Format("*** Setting Desired Idle in ECU to %d RPM ***", (int)((DesIdle * 25) / 2));
 	WriteStatus(buf);
 	// ECU should confirm with 0xF0 0x56 0x04 0xB6
 	WriteToECU(ucRequestDesIdle, 14);
 	return TRUE;
-}
-
-// Write a string to the port - This can even write NULL characters
-void CGMA143Protocol::WriteToECU(unsigned char* string, int stringlength, BOOL bDelay)
-{	
-	m_pSupervisor->m_dwBytesSent += stringlength;
-	m_pcom->WriteToPort(string, stringlength, bDelay);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -304,44 +195,20 @@ void CGMA143Protocol::SendNextCommand(void)
 		SendMode1();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// CGMA143Protocol message handlers
-
-// The supervisor is a hidden window. This is to enable it to receive
-// messages from itself and the serial port class.
-BOOL CGMA143Protocol::CreateProtocolWnd(CWnd* pParentWnd) 
-{
-	// TODO: Add your specialized code here and/or call the base class
-	DWORD	dwStyle = WS_BORDER | WS_CAPTION | WS_CHILD;
-	RECT	rect;
-	UINT nID = 67; // It's my house number!
-
-	rect.top = 0;
-	rect.bottom = 50;
-	rect.left = 0;
-	rect.right = 50;
-	
-	return Create(NULL, "ECU GMA143 Communications Supervisor", dwStyle, rect, pParentWnd, nID, NULL);
-}
-
 // Handle the message from the serial port class.
-LONG CGMA143Protocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
-{
-	 // convert passed variables
-	unsigned char*	pucRX = (unsigned char*) ch;
-	DWORD			uBytesRead = (DWORD) BytesRead;
+BOOL CGMA143Protocol::OnCharsReceived(const unsigned char* const buffer, const DWORD bytesRead, CEcuData* const ecuData) {
+	BOOL updatedEcuData = FALSE;
 	
 	unsigned char	ucRX; // current byte we are reading
 	CString			buf; // for status messages
 	UINT			uByteIndex;
 	
 	// we need a loop here to process all read bytes from serial port
-	for(uByteIndex = 0; uByteIndex < uBytesRead; uByteIndex++)
+	for(uByteIndex = 0; uByteIndex < bytesRead; uByteIndex++)
 	{
-		ucRX = pucRX[uByteIndex]; // index the read-in byte
-		m_pSupervisor->m_dwBytesReceived ++;
+		ucRX = buffer[uByteIndex]; // index the read-in byte
 
-		// Character received is returned in "ch", then copied as ucRX.
+		// Character received is returned in "buffer", then copied as ucRX.
 
 		// OK, we will receive our ECU bytes, one byte at a time. Therefore, we create
 		// what is, in effect, a state machine to build up the data buffer to pass to
@@ -359,7 +226,7 @@ LONG CGMA143Protocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 				{
 					buf.Format("%02x - Finding start header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Found main start header", ucRX);
@@ -372,7 +239,7 @@ LONG CGMA143Protocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 				{// These headers must coincide with what the Parser(..) understands;
 					buf.Format("%02x - Unrecognised header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Header sent by ECU", ucRX);
@@ -392,7 +259,7 @@ LONG CGMA143Protocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			// Received length
 			m_ucBuffer[1] = ucRX; // Length copied to buffer
 			
-			m_iLen = GetLength(ucRX);
+			m_iLen = CGMBaseFunctions::GetLength(ucRX);
 
 			if (m_iLen == 0)
 			{ // No Data so just read the CRC next time around
@@ -434,10 +301,10 @@ LONG CGMA143Protocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			HandleTX(m_ucBuffer, m_iLen + 3);
 
 			// Now Parse it if checksum OK
-			if (CheckChecksum(m_ucBuffer, m_iLen + 3))
-				Parse(m_ucBuffer, m_iLen + 3);
-			else
-			{// may have lost our way, so reset to find header
+			if (CGMBaseFunctions::CheckChecksum(m_ucBuffer, m_iLen + 3)) {
+				updatedEcuData |= m_parser.Parse(m_ucBuffer, m_iLen + 3, ecuData);
+			}
+			else { // may have lost our way, so reset to find header
 				m_bFirstRead = TRUE;
 				WriteStatus("Checksum Error - Not Parsing !!! **** !!! **** !!!");
 			}
@@ -451,13 +318,14 @@ LONG CGMA143Protocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 
 		} // if (m_bReadHeader)
 	} // for (...)
-	return 0;
+
+	return updatedEcuData;
 }
 
 // Receives the buffer and decides what mode commands to send
 int CGMA143Protocol::HandleTX(unsigned char* buffer, int iLength)
 {
-	unsigned char	ucHeader = buffer[0];
+//	unsigned char	ucHeader = buffer[0];
 	unsigned char	ucMode = buffer[2];
 	unsigned char	ucCRC = buffer[iLength - 1]; // Index 0
 
@@ -608,9 +476,4 @@ void CGMA143Protocol::OnMode10(void)
 	if (!m_bInteract)
 		return;
 	//	TRACE("From OnMode10 - Mode 10 Data Detected\n");
-}
-
-BOOL CGMA143Protocol::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext) 
-{
-	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
 }

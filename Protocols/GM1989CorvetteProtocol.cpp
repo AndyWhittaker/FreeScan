@@ -5,11 +5,9 @@
 // mail@andywhittaker.com
 //
 
-#include "stdafx.h"
-#include "..\FreeScan.h"
 #include "GM1989CorvetteProtocol.h"
 
-#include "..\Supervisor.h"
+#include "GMBaseFunctions.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -20,83 +18,21 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CGM1989CorvetteProtocol
 
-CGM1989CorvetteProtocol::CGM1989CorvetteProtocol()
-{
+CGM1989CorvetteProtocol::CGM1989CorvetteProtocol(CStatusWriter* pStatusWriter, CSupervisorInterface* pSupervisor, BOOL bInteract) : CBaseProtocol(pStatusWriter, pSupervisor, bInteract), m_parser(this) {
+	Reset();
+}
+
+CGM1989CorvetteProtocol::~CGM1989CorvetteProtocol() {
+}
+
+void CGM1989CorvetteProtocol::InitializeSupportedValues(CEcuData* const ecuData) {
 	// Put your comments and release notes about the protocol here.
-	m_csComment.Format("Name: GM 1989 Corvette\nVersion v1.4\nDate: 19th July 2000\nImplemented by Andy Whittaker.\nProtocol by A. Mattei\n10k resistor between terminals A and B on ALDL\nconnector to enable 8192 baud serial mode.\nOtherwise it defaults to 160 baud PWM.\nUse Force Data to communicate.");
-
-	// Recall previous settings from the registry.
-	CWinApp* pApp = AfxGetApp();
-	m_bInteract = pApp->GetProfileInt("GM1989CorvetteProtocol", "Interact", FALSE);
-
-	m_pcom = NULL;
-
-	OnResetStateMachine(NULL,NULL);
-}
-
-CGM1989CorvetteProtocol::~CGM1989CorvetteProtocol()
-{
-	// Save our settings to the registry
-	CWinApp* pApp = AfxGetApp();
-	pApp->WriteProfileInt("GM1989CorvetteProtocol", "Interact", m_bInteract);
-}
-
-
-BEGIN_MESSAGE_MAP(CGM1989CorvetteProtocol, CWnd)
-	//{{AFX_MSG_MAP(CGM1989CorvetteProtocol)
-		// NOTE - the ClassWizard will add and remove mapping macros here.
-	ON_MESSAGE(WM_PROT_CMD_RESETSTATE, OnResetStateMachine)
-	ON_MESSAGE(WM_PROT_CMD_SETINTERACT, OnInteract)
-	ON_MESSAGE(WM_PROT_CMD_GETINTERACT, OnGetInteract)
-	ON_MESSAGE(WM_PROT_CMD_ECUMODE, OnECUMode)
-	ON_MESSAGE(WM_PROT_CMD_GETECUMODE, OnGetCurrentMode)
-	ON_MESSAGE(WM_PROT_CMD_FORCESHUTUP, OnForceShutUp)
-	ON_MESSAGE(WM_PROT_CMD_STARTCSV, OnStartCSV)
-	ON_MESSAGE(WM_COMM_RXCHAR, OnCharReceived)
-	//}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
-void CGM1989CorvetteProtocol::PumpMessages()
-{
-	MSG msg;
-	// if there is a message on the queue, then dispatch it
-	if(::PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE )) 
- 	{ 
-		::GetMessage(&msg, NULL, NULL, NULL);
-		::TranslateMessage(&msg);
-		::DispatchMessage(&msg);
-	} 
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Interfaces to this class
-
-// Initialises the Supervisor
-HWND CGM1989CorvetteProtocol::Init(CSupervisor* pSupervisor, CSerialPort* pcom, CWnd* pParentWnd, CStatusDlg* pStatusDlg)
-{
-	m_pSupervisor = pSupervisor; // our owner
-	m_pStatusDlg = pStatusDlg; // Debug Window
-	m_pcom = pcom; // assign our serial port pointer.
-
-	WriteStatus("Creating GM1989Corvette Protocol Window");
-	CreateProtocolWnd(pParentWnd); // creates this window for communication messages
-
-	// This sets up the com port CSerialPort Object
-	// Note: Look in SerialPort.h for the defaults:
-	// We need 8192baud, 1 start, 1 stop and no parity.
-	// We pass the CSerialPort a this pointer because it
-	// needs to send messages to this window via the CWnd Object
-	if (!m_pcom->InitPort(this, NULL))
-		WriteStatus("Failed to initialise the Com Port");
-	else
-		WriteStatus("Com Port initialised");
-
-	return m_hWnd;
+	ecuData->m_csProtocolComment.Format("Name: GM 1989 Corvette\nVersion v1.4\nDate: 19th July 2000\nImplemented by Andy Whittaker.\nProtocol by A. Mattei\n10k resistor between terminals A and B on ALDL\nconnector to enable 8192 baud serial mode.\nOtherwise it defaults to 160 baud PWM.\nUse Force Data to communicate.");
+	m_parser.InitializeSupportedValues(ecuData);
 }
 
 // Resets the protocol state machine
-LONG CGM1989CorvetteProtocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
-{
+void CGM1989CorvetteProtocol::Reset() {
 	m_dwCurrentMode = 0;
 	m_dwRequestedMode = 1; // Mode we want next
 	m_bModeDone = TRUE; // Have we sent our mode request?
@@ -114,61 +50,27 @@ LONG CGM1989CorvetteProtocol::OnResetStateMachine(WPARAM wdummy, LPARAM dummy)
 	m_bReadCRC = FALSE;
 
 	m_bSentOnce = FALSE;
-
-	return 0;
 }
 
-// Requests whether FreeScan talks to the ECU or not
-LONG CGM1989CorvetteProtocol::OnInteract(WPARAM bInteract, LPARAM dummy)
-{
-	if (bInteract)
-	{
-		WriteStatus("Interaction with the ECU enabled.");
-		m_bInteract=TRUE;
-	}
-	else
-	{
-		WriteStatus("In monitor mode, no interaction with ECU will be done.");
-		m_bInteract=FALSE;
-	}
-	return 0;
-}
 
 // This switches the mode number that is sent to the ECU. It changes the
 // behaviour of SendNextCommand(..).
-LONG CGM1989CorvetteProtocol::OnECUMode(WPARAM dwMode, LPARAM Data)
+void CGM1989CorvetteProtocol::SetECUMode(const DWORD dwMode, const unsigned char data)
 {
-	m_ucData = (unsigned char) Data; // data for ECU, e.g. Desired Idle
-	m_dwRequestedMode = (DWORD) dwMode; // Mode we want next
+	m_ucData = data; // data for ECU, e.g. Desired Idle
+	m_dwRequestedMode = dwMode; // Mode we want next
 	m_bModeDone = FALSE; // Have we sent our mode request?
-	return 0;
-}
-
-LONG CGM1989CorvetteProtocol::OnStartCSV(WPARAM bStart, LPARAM dummy)
-{
-	// call the base class function
-	return (LONG) StartCSVLog((BOOL) bStart);
-}
-
-// Gets the interact status
-LONG CGM1989CorvetteProtocol::OnGetInteract(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_bInteract;
 }
 
 // Returns the current ECU Mode
-LONG CGM1989CorvetteProtocol::OnGetCurrentMode(WPARAM wdummy, LPARAM dummy)
-{
-	return (LONG) m_dwCurrentMode;
+DWORD CGM1989CorvetteProtocol::GetCurrentMode(void) {
+	return m_dwCurrentMode;
 }
 
-// Forces Shut-Up to be sent.
-LONG CGM1989CorvetteProtocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
-{
+void CGM1989CorvetteProtocol::ForceDataFromECU(void) {
 	WriteStatus("Forcing ECU with a shut-up");
 	m_bModeDone = TRUE; // This is for the SendNextCommand() function
 	SendMode1_0();
-	return (LONG) 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -178,7 +80,7 @@ LONG CGM1989CorvetteProtocol::OnForceShutUp(WPARAM wdummy, LPARAM dummy)
 BOOL CGM1989CorvetteProtocol::SendIdle(void)
 { //0x80 0x56, 0x00, 0x2a
 	unsigned char	ucRequestIdle[] = { 0x80, 0x56, 0x00, 0x2a }; // Idle
-	SetChecksum(ucRequestIdle, 4);
+	CGMBaseFunctions::SetChecksum(ucRequestIdle, 4);
 	WriteStatus("*** Sending Idle to ECU ***");
 	WriteToECU(ucRequestIdle, 4, FALSE); //No delay before transmit
 	return TRUE;
@@ -197,7 +99,7 @@ BOOL CGM1989CorvetteProtocol::SendModeShutUp(void)
 BOOL CGM1989CorvetteProtocol::SendMode1_0(void)
 { //0x80 0x57 0x01 0x00 0x28
 	unsigned char	ucRequestMode1_0[] = { 0x80, 0x56, 0x01, 0x29 }; //
-	SetChecksum(ucRequestMode1_0, 5);
+	CGMBaseFunctions::SetChecksum(ucRequestMode1_0, 5);
 	WriteStatus("*** Requesting Mode 1 Msg 0 from ECU ***");
 	WriteToECU(ucRequestMode1_0, 5);
 	return TRUE;
@@ -217,7 +119,7 @@ BOOL CGM1989CorvetteProtocol::ReceiveDTCs(void)
 BOOL CGM1989CorvetteProtocol::ClearDTCs(void)
 { //0x80 0x56 0x0a 0x2c
 	unsigned char	ucRequestMode4[] = { 0x80, 0x56, 0x0a, 0x2c};
-	SetChecksum(ucRequestMode4, 4);
+	CGMBaseFunctions::SetChecksum(ucRequestMode4, 4);
 	// ECU should confirm with 0x80 0x56 0x0a 0x2c
 	WriteStatus("*** Clearing DTCs in ECU ***");
 	WriteToECU(ucRequestMode4, 4);
@@ -228,7 +130,7 @@ BOOL CGM1989CorvetteProtocol::ClearDTCs(void)
 BOOL CGM1989CorvetteProtocol::ClearBLM(void)
 { //0x80 0x60 0x04 0x00 0x00 0x10 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0C
 	unsigned char	ucRequestMode4[] = { 0x80, 0x60, 0x04, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c };
-	SetChecksum(ucRequestMode4, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestMode4, 14);
 	// ECU should confirm with 0x80 0x56 0x04 0x26
 	WriteStatus("*** Clearing BLM in ECU ***");
 	WriteToECU(ucRequestMode4, 14);
@@ -239,7 +141,7 @@ BOOL CGM1989CorvetteProtocol::ClearBLM(void)
 BOOL CGM1989CorvetteProtocol::ResetIAC(void)
 { //0x80 0x60 0x04 0x00 0x00 0x20 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0xfC
 	unsigned char	ucRequestMode4[] = { 0x80, 0x60, 0x04, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfc };
-	SetChecksum(ucRequestMode4, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestMode4, 14);
 	// ECU should confirm with 0x80 0x56 0x04 0x26
 	WriteStatus("*** Resetting IAC in ECU ***");
 	WriteToECU(ucRequestMode4, 14);
@@ -257,20 +159,13 @@ BOOL CGM1989CorvetteProtocol::SetDesiredIdle(unsigned char DesIdle)
 	unsigned char	ucRequestDesIdle[] = { 0x80, 0x60, 0x04, 0x01, 0x01, 0x00, 0x00, 0x10, 0xff, 0x03, 0x90, 0x00, 0x00, 0x78 };
 	ucRequestDesIdle[10] = DesIdle;
 
-	SetChecksum(ucRequestDesIdle, 14);
+	CGMBaseFunctions::SetChecksum(ucRequestDesIdle, 14);
 	CString buf;
 	buf.Format("*** Setting Desired Idle in ECU to %d RPM ***", (int)((DesIdle * 25) / 2));
 	WriteStatus(buf);
 	// ECU should confirm with 0x80 0x56 0x04 0x26
 	WriteToECU(ucRequestDesIdle, 14);
 	return TRUE;
-}
-
-// Write a string to the port - This can even write NULL characters
-void CGM1989CorvetteProtocol::WriteToECU(unsigned char* string, int stringlength, BOOL bDelay)
-{	
-	m_pSupervisor->m_dwBytesSent += stringlength;
-	m_pcom->WriteToPort(string, stringlength, bDelay);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -315,44 +210,20 @@ void CGM1989CorvetteProtocol::SendNextCommand(void)
 		SendMode1_0();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// CGM1989CorvetteProtocol message handlers
-
-// The supervisor is a hidden window. This is to enable it to receive
-// messages from itself and the serial port class.
-BOOL CGM1989CorvetteProtocol::CreateProtocolWnd(CWnd* pParentWnd) 
-{
-	// TODO: Add your specialized code here and/or call the base class
-	DWORD	dwStyle = WS_BORDER | WS_CAPTION | WS_CHILD;
-	RECT	rect;
-	UINT nID = 67; // It's my house number!
-
-	rect.top = 0;
-	rect.bottom = 50;
-	rect.left = 0;
-	rect.right = 50;
-	
-	return Create(NULL, "ECU GM1989Corvette Communications Supervisor", dwStyle, rect, pParentWnd, nID, NULL);
-}
-
 // Handle the message from the serial port class.
-LONG CGM1989CorvetteProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
-{
-	 // convert passed variables
-	unsigned char*	pucRX = (unsigned char*) ch;
-	DWORD			uBytesRead = (DWORD) BytesRead;
+BOOL CGM1989CorvetteProtocol::OnCharsReceived(const unsigned char* const buffer, const DWORD bytesRead, CEcuData* const ecuData) {
+	BOOL			updatedEcuData = FALSE;
 	
 	unsigned char	ucRX; // current byte we are reading
 	CString			buf; // for status messages
 	UINT			uByteIndex;
 	
 	// we need a loop here to process all read bytes from serial port
-	for(uByteIndex = 0; uByteIndex < uBytesRead; uByteIndex++)
+	for(uByteIndex = 0; uByteIndex < bytesRead; uByteIndex++)
 	{
-		ucRX = pucRX[uByteIndex]; // index the read-in byte
-		m_pSupervisor->m_dwBytesReceived ++;
+		ucRX = buffer[uByteIndex]; // index the read-in byte
 
-		// Character received is returned in "ch", then copied as ucRX.
+		// Character received is returned in "buffer", then copied as ucRX.
 
 		// OK, we will receive our ECU bytes, one byte at a time. Therefore, we create
 		// what is, in effect, a state machine to build up the data buffer to pass to
@@ -370,7 +241,7 @@ LONG CGM1989CorvetteProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 				{
 					buf.Format("%02x - Finding start header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Found main start header", ucRX);
@@ -383,7 +254,7 @@ LONG CGM1989CorvetteProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 				{// These headers must coincide with what the Parser(..) understands;
 					buf.Format("%02x - Unrecognised header", ucRX);
 					WriteStatus(buf);
-					return 0;
+					return updatedEcuData;
 				}
 
 				buf.Format("%02x - Header sent by ECU", ucRX);
@@ -403,7 +274,7 @@ LONG CGM1989CorvetteProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			// Received length
 			m_ucBuffer[1] = ucRX; // Length copied to buffer
 			
-			m_iLen = GetLength(ucRX);
+			m_iLen = CGMBaseFunctions::GetLength(ucRX);
 
 			if (m_iLen == 0)
 			{ // No Data so just read the CRC next time around
@@ -445,10 +316,10 @@ LONG CGM1989CorvetteProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 			HandleTX(m_ucBuffer, m_iLen + 3);
 
 			// Now Parse it if checksum OK
-			if (CheckChecksum(m_ucBuffer, m_iLen + 3))
-				Parse(m_ucBuffer, m_iLen + 3);
-			else
-			{// may have lost our way, so reset to find header
+			if (CGMBaseFunctions::CheckChecksum(m_ucBuffer, m_iLen + 3)) {
+				updatedEcuData |= m_parser.Parse(m_ucBuffer, m_iLen + 3, ecuData);
+			}
+			else { // may have lost our way, so reset to find header
 				m_bFirstRead = TRUE;
 				WriteStatus("Checksum Error - Not Parsing !!! **** !!! **** !!!");
 			}
@@ -462,7 +333,8 @@ LONG CGM1989CorvetteProtocol::OnCharReceived(WPARAM ch, LPARAM BytesRead)
 
 		} // if (m_bReadHeader)
 	} // for(..)
-	return 0;
+
+	return updatedEcuData;
 }
 
 // Receives the buffer and decides what mode commands to send
@@ -470,7 +342,7 @@ int CGM1989CorvetteProtocol::HandleTX(unsigned char* buffer, int iLength)
 {
 	unsigned char	ucHeader = buffer[0];
 	unsigned char	ucMode = buffer[2];
-	unsigned char	ucMsg = buffer[3];
+//	unsigned char	ucMsg = buffer[3];
 	unsigned char	ucCRC = buffer[iLength - 1]; // Index 0
 
 	// There is a minor bug with this code. If we get a checksum error,
@@ -598,9 +470,4 @@ void CGM1989CorvetteProtocol::OnMode10(void)
 	if (!m_bInteract) return; // Don't want to transmit
 
 	//	TRACE("From OnMode10 - Mode 10 Header Detected\n");
-}
-
-BOOL CGM1989CorvetteProtocol::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext) 
-{
-	return CWnd::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
 }

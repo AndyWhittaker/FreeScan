@@ -29,18 +29,6 @@
     <Filter Include="Source Files\Protocols\Lotus Elan M100">
       <UniqueIdentifier>{ad40f5f7-c26a-49a5-9dab-9427379d1867}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29">
-      <UniqueIdentifier>{3821662c-4714-4a8d-bd5f-d5fc5904fab1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Protocols\GM 1992 Pontiac %28A186%29">
-      <UniqueIdentifier>{97ae630c-08a1-414c-a8dc-127863acd3a4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Protocols\GM 1989 Corvette">
-      <UniqueIdentifier>{803f6cdf-d37d-4d6f-ba3e-11c15a9e0e94}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29">
-      <UniqueIdentifier>{1fd3114c-6d8d-41f4-8245-d9772cb8b3ef}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Protocols\GM A27">
       <UniqueIdentifier>{1ebff63f-5fa6-4062-85bf-dfd4e1e100c9}</UniqueIdentifier>
     </Filter>
@@ -59,17 +47,11 @@
     <Filter Include="Source Files\Protocols\Lotus Carlton">
       <UniqueIdentifier>{7cdd8949-0faf-4286-8a09-3aeea1d39a7f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Protocols\A160">
-      <UniqueIdentifier>{03a0d74a-d56d-42d4-a1a8-e03278d99feb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\AboutBox">
       <UniqueIdentifier>{bfdc5203-ce9d-4fd3-bb8f-86fb6a97d5bc}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Led">
       <UniqueIdentifier>{7ba10e64-11ad-4977-8f4e-a922d354bed9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\StringEx">
-      <UniqueIdentifier>{32da4727-49a4-4b98-894c-bd2d200f0ce8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{f3b320c7-da56-4bf9-8d35-fda7b8b6e23b}</UniqueIdentifier>
@@ -86,15 +68,27 @@
     <Filter Include="Source Files\Protocols\ELM327">
       <UniqueIdentifier>{760be2c4-1eab-47f5-8a2e-7c7a7ca9523d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Protocols\GM A160">
+      <UniqueIdentifier>{03a0d74a-d56d-42d4-a1a8-e03278d99feb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A186 1992 Pontiac">
+      <UniqueIdentifier>{97ae630c-08a1-414c-a8dc-127863acd3a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A172 1993 Camaro Z28">
+      <UniqueIdentifier>{1fd3114c-6d8d-41f4-8245-d9772cb8b3ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A274 1994 Camaro Z28">
+      <UniqueIdentifier>{3821662c-4714-4a8d-bd5f-d5fc5904fab1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocols\GM A059 1989 Corvette">
+      <UniqueIdentifier>{803f6cdf-d37d-4d6f-ba3e-11c15a9e0e94}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="font.cpp">
       <Filter>Source Files\ActiveX</Filter>
     </ClCompile>
     <ClCompile Include="picture.cpp">
-      <Filter>Source Files\ActiveX</Filter>
-    </ClCompile>
-    <ClCompile Include="rbgauge.cpp">
       <Filter>Source Files\ActiveX</Filter>
     </ClCompile>
     <ClCompile Include="DesIdleDlg.cpp">
@@ -128,28 +122,28 @@
       <Filter>Source Files\Protocols\Lotus Elan M100</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GM1994CamaroZ28Parser.cpp">
-      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+      <Filter>Source Files\Protocols\GM A274 1994 Camaro Z28</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GM1994CamaroZ28Protocol.cpp">
-      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+      <Filter>Source Files\Protocols\GM A274 1994 Camaro Z28</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GM1992PontiacParser.cpp">
-      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+      <Filter>Source Files\Protocols\GM A186 1992 Pontiac</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GM1992PontiacProtocol.cpp">
-      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+      <Filter>Source Files\Protocols\GM A186 1992 Pontiac</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GM1989CorvetteParser.cpp">
-      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+      <Filter>Source Files\Protocols\GM A059 1989 Corvette</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GM1989CorvetteProtocol.cpp">
-      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+      <Filter>Source Files\Protocols\GM A059 1989 Corvette</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GM1993CamaroZ28Parser.cpp">
-      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+      <Filter>Source Files\Protocols\GM A172 1993 Camaro Z28</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GM1993CamaroZ28Protocol.cpp">
-      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+      <Filter>Source Files\Protocols\GM A172 1993 Camaro Z28</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GMA143Parser.cpp">
       <Filter>Source Files\Protocols\GM A143</Filter>
@@ -170,10 +164,10 @@
       <Filter>Source Files\Protocols\Lotus Carlton</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GMA160Parser.cpp">
-      <Filter>Source Files\Protocols\A160</Filter>
+      <Filter>Source Files\Protocols\GM A160</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GMA160Protocol.cpp">
-      <Filter>Source Files\Protocols\A160</Filter>
+      <Filter>Source Files\Protocols\GM A160</Filter>
     </ClCompile>
     <ClCompile Include="Protocols\GMBaseFunctions.cpp">
       <Filter>Source Files\Protocols</Filter>
@@ -189,9 +183,6 @@
     </ClCompile>
     <ClCompile Include="Led.cpp">
       <Filter>Source Files\Led</Filter>
-    </ClCompile>
-    <ClCompile Include="MABString.cpp">
-      <Filter>Source Files\StringEx</Filter>
     </ClCompile>
     <ClCompile Include="AdvancedDlg.cpp">
       <Filter>Source Files</Filter>
@@ -226,9 +217,6 @@
     <ClCompile Include="StatusBitsDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StdAfx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TCodesDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -238,15 +226,18 @@
     <ClCompile Include="Protocols\ELM327Protocol.cpp">
       <Filter>Source Files\Protocols\ELM327</Filter>
     </ClCompile>
+    <ClCompile Include="Protocols\EcuData.cpp">
+      <Filter>Source Files\Protocols</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\BaseProtocol.cpp">
+      <Filter>Source Files\Protocols</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocols\BaseParser.cpp">
+      <Filter>Source Files\Protocols</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="font.h">
-      <Filter>Source Files\ActiveX</Filter>
-    </ClInclude>
     <ClInclude Include="picture.h">
-      <Filter>Source Files\ActiveX</Filter>
-    </ClInclude>
-    <ClInclude Include="rbgauge.h">
       <Filter>Source Files\ActiveX</Filter>
     </ClInclude>
     <ClInclude Include="DesIdleDlg.h">
@@ -280,28 +271,28 @@
       <Filter>Source Files\Protocols\Lotus Elan M100</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GM1994CamaroZ28Parser.h">
-      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+      <Filter>Source Files\Protocols\GM A274 1994 Camaro Z28</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GM1994CamaroZ28Protocol.h">
-      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+      <Filter>Source Files\Protocols\GM A274 1994 Camaro Z28</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GM1992PontiacParser.h">
-      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+      <Filter>Source Files\Protocols\GM A186 1992 Pontiac</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GM1992PontiacProtocol.h">
-      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+      <Filter>Source Files\Protocols\GM A186 1992 Pontiac</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GM1989CorvetteParser.h">
-      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+      <Filter>Source Files\Protocols\GM A059 1989 Corvette</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GM1989CorvetteProtocol.h">
-      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+      <Filter>Source Files\Protocols\GM A059 1989 Corvette</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GM1993CamaroZ28Parser.h">
-      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+      <Filter>Source Files\Protocols\GM A172 1993 Camaro Z28</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GM1993CamaroZ28Protocol.h">
-      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+      <Filter>Source Files\Protocols\GM A172 1993 Camaro Z28</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GMA143Parser.h">
       <Filter>Source Files\Protocols\GM A143</Filter>
@@ -322,10 +313,10 @@
       <Filter>Source Files\Protocols\Lotus Carlton</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GMA160Parser.h">
-      <Filter>Source Files\Protocols\A160</Filter>
+      <Filter>Source Files\Protocols\GM A160</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GMA160Protocol.h">
-      <Filter>Source Files\Protocols\A160</Filter>
+      <Filter>Source Files\Protocols\GM A160</Filter>
     </ClInclude>
     <ClInclude Include="Protocols\GMBaseFunctions.h">
       <Filter>Source Files\Protocols</Filter>
@@ -341,9 +332,6 @@
     </ClInclude>
     <ClInclude Include="Led.h">
       <Filter>Source Files\Led</Filter>
-    </ClInclude>
-    <ClInclude Include="MABString.h">
-      <Filter>Source Files\StringEx</Filter>
     </ClInclude>
     <ClInclude Include="AdvancedDlg.h">
       <Filter>Header Files</Filter>
@@ -378,9 +366,6 @@
     <ClInclude Include="StatusBitsDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StdAfx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TCodesDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -389,6 +374,27 @@
     </ClInclude>
     <ClInclude Include="Protocols\ELM327Parser.h">
       <Filter>Source Files\Protocols\ELM327</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\vcruntime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\EcuData.h">
+      <Filter>Source Files\Protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\BaseProtocol.h">
+      <Filter>Source Files\Protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseDefines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StatusWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\SupervisorInterface.h">
+      <Filter>Source Files\Protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocols\BaseParser.h">
+      <Filter>Source Files\Protocols</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -404,16 +410,16 @@
       <Filter>Source Files\Protocols\Lotus Elan M100</Filter>
     </CustomBuild>
     <CustomBuild Include="Protocols\GM Camaro Z28.doc">
-      <Filter>Source Files\Protocols\GM 1994 Camaro Z28 %28A274%29</Filter>
+      <Filter>Source Files\Protocols\GM A274 1994 Camaro Z28</Filter>
     </CustomBuild>
     <CustomBuild Include="Protocols\GM Pontiac 3_4.doc">
-      <Filter>Source Files\Protocols\GM 1992 Pontiac %28A186%29</Filter>
+      <Filter>Source Files\Protocols\GM A186 1992 Pontiac</Filter>
     </CustomBuild>
     <CustomBuild Include="Protocols\GM Chevrolet 89 Corvette.doc">
-      <Filter>Source Files\Protocols\GM 1989 Corvette</Filter>
+      <Filter>Source Files\Protocols\GM A059 1989 Corvette</Filter>
     </CustomBuild>
     <CustomBuild Include="Protocols\GM Camaro 92-93Y 93F.txt">
-      <Filter>Source Files\Protocols\GM 1993 Camaro Z28 %28A172%29</Filter>
+      <Filter>Source Files\Protocols\GM A172 1993 Camaro Z28</Filter>
     </CustomBuild>
     <CustomBuild Include="Protocols\A27.txt">
       <Filter>Source Files\Protocols\GM A27</Filter>
@@ -431,7 +437,7 @@
       <Filter>Source Files\Protocols\GM A140</Filter>
     </CustomBuild>
     <CustomBuild Include="Protocols\A160.txt">
-      <Filter>Source Files\Protocols\A160</Filter>
+      <Filter>Source Files\Protocols\GM A160</Filter>
     </CustomBuild>
     <CustomBuild Include="hlp\FreeScan.hpj">
       <Filter>Source Files</Filter>

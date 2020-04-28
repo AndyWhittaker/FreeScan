@@ -4,14 +4,15 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// EngineDlg.h : header file
-//
+
+#include "BaseDefines.h"
+
 #include "TTPropertyPage.h" // Our Tooltip Class
+#include "EcuData.h"
+#include "SupervisorInterface.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CEngineDlg dialog
-class CFreeScanDlg;
-class CSupervisor;
 
 class CEngineDlg : public CTTPropertyPage
 {
@@ -23,6 +24,7 @@ public:
 	~CEngineDlg();
 
 // Dialog Data
+private:
 	//{{AFX_DATA(CEngineDlg)
 	enum { IDD = IDD_ENGINEDATA };
 	CEdit	m_Knock_Count;
@@ -60,24 +62,21 @@ public:
 	CEdit	m_CoolantTemp;
 	//}}AFX_DATA
 
-	CFreeScanDlg*	m_pMainDlg; // Base Dialog Pointer.
+	CSupervisorInterface* m_pSupervisor;
 
 // Overrides
 	// ClassWizard generate virtual function overrides
 	//{{AFX_VIRTUAL(CEngineDlg)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
 // Implementation
 public:
-	void Refresh(void);
+	void Refresh(const CEcuData* const ecuData);
+	void RegisterSupervisor(CSupervisorInterface* const pSupervisor);
 
-protected:
-	CSupervisor* GetSupervisor(void); // returns a pointer to the Supervisor
-	CSupervisor* GetData(void); // return a pointer to the Data
-	DWORD GetCurrentMode(void);
-
+private:
 	// Generated message map functions
 	//{{AFX_MSG(CEngineDlg)
 	virtual BOOL OnInitDialog();

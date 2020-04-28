@@ -9,25 +9,19 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-class CStatusDlg;
+#include "BaseDefines.h"
 
-class CGMBaseFunctions : public CWnd
+class CGMBaseFunctions
 {
+private:
+	CGMBaseFunctions() = delete;
+	virtual ~CGMBaseFunctions() = delete;
+
 public:
-	CGMBaseFunctions();
-	virtual ~CGMBaseFunctions();
-
-	CStatusDlg*		m_pStatusDlg; // for peep window
-
-	//Implementation
-	void WriteStatus(CString csText);
-	void WriteASCII(unsigned char * buffer, int ilength);
-	void WriteLogEntry(LPCTSTR pstrFormat, ...);
-	void WriteStatusLogged(CString csText);
-	BOOL CheckChecksum(unsigned char * buffer, int iLength);
-	void SetChecksum(unsigned char * buffer, int iLength);// Calculates and sets the correct CRC
-	int  GetLength(int iLength);
-	float ReturnTemp(int iADC);
+	static BOOL CheckChecksum(const unsigned char* const buffer, int iLength);
+	static void SetChecksum(unsigned char * buffer, int iLength);// Calculates and sets the correct CRC
+	static int  GetLength(int iLength);
+	static float ReturnTemp(int iADC);
 };
 
 #endif // !defined(AFX_GMBASEFUNTIONS_H__E717A35F_1C87_4B07_838D_FE2B975D5DA3__INCLUDED_)
